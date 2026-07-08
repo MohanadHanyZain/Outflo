@@ -16,12 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const input = window.Outflo.prepareGoogleInput();
-            const count = window.Outflo.getLeadCount();
-            
             console.log('📦 Input:', input);
-            console.log('🎯 Target count:', count);
             
-            window.Outflo.runActor('AabCualFIriz3X6Fs', input, 'google', count);
+            // استخدم الطريقة الجديدة التي لا تعاني من CORS
+            window.Outflo.runActorNoCORS('AabCualFIriz3X6Fs', input, 'google', window.Outflo.getLeadCount());
         });
     }
 
@@ -34,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (debugBtn) {
         debugBtn.addEventListener('click', function() {
             console.log('🔍 Google Maps Debug');
-            console.log('Outflo loaded:', !!window.Outflo);
             if (window.Outflo) {
                 console.log('Items:', window.Outflo.currentItems ? window.Outflo.currentItems.length : 0);
             }
@@ -49,5 +46,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    console.log('📍 Google Maps page ready with organized display');
+    console.log('📍 Google Maps page ready');
 });

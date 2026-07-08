@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (runLinkedinBtn) {
         runLinkedinBtn.addEventListener('click', function() {
             console.log('🚀🚀🚀 RUNNING LINKEDIN SCRAPER...');
-            console.log('📌 Using Actor: apify/linkedin-people-search-scraper (Official LinkedIn Search)');
             
             if (!window.Outflo) {
                 console.error('❌ Outflo not loaded');
@@ -17,13 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const input = window.Outflo.prepareLinkedinInput();
-            const count = window.Outflo.getLeadCount();
-            
             console.log('📦 Input:', input);
-            console.log('🎯 Target count:', count);
             
-            // استخدم الـ Actor الرسمي
-            window.Outflo.runActor('apify/linkedin-people-search-scraper', input, 'linkedin', count);
+            // استخدم الطريقة الجديدة التي لا تعاني من CORS
+            window.Outflo.runActorNoCORS('M2FMdjRVeF1HPGFcc', input, 'linkedin', window.Outflo.getLeadCount());
         });
     }
 
@@ -36,10 +32,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (debugBtn) {
         debugBtn.addEventListener('click', function() {
             console.log('🔍 LinkedIn Debug');
-            console.log('Outflo loaded:', !!window.Outflo);
             if (window.Outflo) {
                 console.log('Items:', window.Outflo.currentItems ? window.Outflo.currentItems.length : 0);
-                console.log('Email stats:', window.Outflo.emailStats);
             }
         });
     }
@@ -52,5 +46,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    console.log('🔗 LinkedIn page ready with Actor: apify/linkedin-people-search-scraper');
+    console.log('🔗 LinkedIn page ready');
 });

@@ -1,4 +1,4 @@
-// ===== CORE LOGIC - Enhanced with better table display =====
+// ===== CORE LOGIC - Enhanced with No-CORS method =====
 
 (function() {
     "use strict";
@@ -43,7 +43,7 @@
         return val;
     }
 
-    // ===== Email Hunter =====
+    // ===== Email Hunter (No prediction) =====
     function huntEmail(item) {
         const direct = ['email', 'emailAddress', 'contactInfo.email', 'primaryEmail', 'workEmail', 'contactEmail'];
         for (let f of direct) {
@@ -59,31 +59,7 @@
             const unique = [...new Set(matches)];
             return { email: unique[0], source: 'Regex Sniped' };
         }
-        const firstName = item.firstName || item.name?.split(' ')[0] || '';
-        const lastName = item.lastName || item.name?.split(' ').slice(1).join(' ') || '';
-        const company = item.currentCompany?.name || item.currentCompany || item.companyName || item.company || '';
-        if (firstName && company) {
-            const clean = company.replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
-            const f = firstName.replace(/[^a-zA-Z]/g,'').toLowerCase();
-            if (clean.length > 2) {
-                return { email: `${f}@${clean}.com`, source: 'Predicted (Company)' };
-            }
-        }
-        if (firstName && lastName) {
-            const f = firstName.replace(/[^a-zA-Z]/g,'').toLowerCase();
-            const l = lastName.replace(/[^a-zA-Z]/g,'').toLowerCase();
-            if (f && l) {
-                return { email: `${f}.${l}@gmail.com`, source: 'Predicted (Gmail)' };
-            }
-        }
-        const social = ['twitter','facebook','instagram','tiktok','youtube','whatsapp','phone'];
-        for (let s of social) {
-            const val = item[s] || item[`${s}Url`] || item[`${s}Link`];
-            if (val && typeof val === 'string' && val.trim()) {
-                return { email: `@${val}`, source: 'Social Contact' };
-            }
-        }
-        return { email: 'Unavailable 🔒', source: 'Fallback' };
+        return { email: 'Not Available', source: 'Not Found' };
     }
 
     function getProfileLink(item) {
@@ -112,7 +88,7 @@
         });
         return filtered.sort((a,b) => {
             const ea = huntEmail(a), eb = huntEmail(b);
-            const pri = e => e.source.includes('Found') || e.source.includes('Regex') ? 0 : e.source.includes('Predicted') ? 1 : 2;
+            const pri = e => e.source === 'Found ✓' || e.source === 'Regex Sniped' ? 0 : 1;
             return pri(ea) - pri(eb);
         });
     }
@@ -121,7 +97,7 @@
     // ===== SAVE TO DATABASE =====
     // =============================================
     async function saveToDatabase(items, platform) {
-        console.log('💾💾💾 SAVING TO DATABASE FROM APP.JS...');
+        console.log('💾 SAVING TO DATABASE FROM APP.JS...');
         console.log('📊 Platform:', platform);
         console.log('📊 Items count:', items ? items.length : 0);
 
@@ -166,15 +142,14 @@
             );
 
             if (result) {
-                console.log('✅✅✅ DATA SAVED TO DATABASE SUCCESSFULLY!');
-                console.log('📝 Saved lead ID:', result[0]?.id || 'unknown');
+                console.log('✅ DATA SAVED TO DATABASE SUCCESSFULLY!');
                 return true;
             } else {
                 console.error('❌ Failed to save data');
                 return false;
             }
         } catch (err) {
-            console.error('❌❌❌ Error saving to database:', err);
+            console.error('❌ Error saving to database:', err);
             return false;
         }
     }
@@ -188,7 +163,6 @@
         emailStats = { found:0, predicted:0, fallback:0 };
         let display = items || [];
 
-        // Apply LinkedIn filter if needed
         if (platform === 'linkedin') {
             const linkedinJobInput = getEl('linkedinJob');
             const kw = linkedinJobInput ? linkedinJobInput.value.trim() : '';
@@ -199,7 +173,6 @@
             }
         }
 
-        // Trim to target count
         if (targetCount && targetCount > 0 && display.length > targetCount) {
             display = display.slice(0, targetCount);
         }
@@ -224,7 +197,6 @@
             let cols = [];
             
             if (platform === 'google') {
-                // ===== GOOGLE MAPS - Organized =====
                 const name = item.name || item.title || 'Unknown';
                 const phone = item.phone || '—';
                 const website = item.website || '—';
@@ -244,7 +216,6 @@
                     `<span class="badge-platform google">Google Maps</span>`
                 ];
             } else {
-                // ===== LINKEDIN - Organized =====
                 const fullName = item.fullName || item.name || item.firstName || 'Unknown';
                 const jobTitle = item.headline || item.occupation || item.jobTitle || '—';
                 const company = item.currentCompany || item.company || '—';
@@ -253,15 +224,13 @@
                 
                 let emailDisplay = emailRes.email;
                 let badgeClass = 'badge-email';
-                if (emailRes.source.includes('Found') || emailRes.source.includes('Regex')) {
+                if (emailRes.source === 'Found ✓' || emailRes.source === 'Regex Sniped') {
                     badgeClass += ' found';
                     emailStats.found++;
-                } else if (emailRes.source.includes('Predicted')) {
-                    badgeClass += ' predicted';
-                    emailStats.predicted++;
                 } else {
                     badgeClass += ' fallback';
                     emailStats.fallback++;
+                    emailDisplay = 'Not Available';
                 }
                 const emailHtml = `<span class="${badgeClass}" title="${emailRes.source}">${emailDisplay}</span>`;
                 
@@ -294,7 +263,7 @@
         currentItems = display;
         const total = display.length;
         const summary = platform === 'linkedin' ? 
-            ` | 📧 ${emailStats.found} found, ${emailStats.predicted} predicted` : '';
+            ` | 📧 ${emailStats.found} found, ${emailStats.fallback} not available` : '';
         const filterInfo = platform === 'linkedin' && filteredCount > 0 ? ` (filtered ${filteredCount})` : '';
         if (resultCount) resultCount.innerText = `${total} leads${filterInfo}${summary}`;
         if (downloadBtn) downloadBtn.disabled = false;
@@ -302,14 +271,13 @@
         if (platform === 'linkedin' && statsRow) {
             statsRow.style.display = 'flex';
             if (statFound) statFound.innerText = emailStats.found;
-            if (statPredicted) statPredicted.innerText = emailStats.predicted;
+            if (statPredicted) statPredicted.innerText = 0;
             if (statFallback) statFallback.innerText = emailStats.fallback;
             if (statTotal) statTotal.innerText = total;
         } else if (statsRow) {
             statsRow.style.display = 'none';
         }
 
-        // Save to database
         if (display && display.length > 0) {
             console.log('💾 Triggering database save from renderTable...');
             saveToDatabase(display, platform);
@@ -425,8 +393,10 @@
         URL.revokeObjectURL(link.href);
     }
 
-    // ===== Run Actor =====
-    async function runActor(actorId, inputData, platform, targetCountParam) {
+    // =============================================
+    // ===== NEW: runActorNoCORS (uses run-sync-get-dataset-items) =====
+    // =============================================
+    async function runActorNoCORS(actorId, inputData, platform, targetCountParam) {
         targetCount = targetCountParam || getLeadCount();
         resetAllData();
         currentPlatform = platform;
@@ -435,111 +405,40 @@
         console.log(`🚀 Starting actor: ${actorId} for platform: ${platform}, target: ${targetCount}`);
 
         try {
-            const url = `https://api.apify.com/v2/acts/${actorId}/runs?token=${API_TOKEN}`;
+            const url = `https://api.apify.com/v2/acts/${actorId}/runs-sync-get-dataset-items?token=${API_TOKEN}`;
             const resp = await fetch(url, {
                 method: 'POST',
-                mode: 'cors',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(inputData)
             });
+
             if (!resp.ok) {
                 const errText = await resp.text();
-                console.error('❌ API start error:', resp.status, errText);
+                console.error('❌ API error:', resp.status, errText);
                 throw new Error(`Start failed: ${resp.status} - ${errText}`);
             }
-            const result = await resp.json();
-            console.log('✅ Run started, response:', result);
-            const runId = result.data?.id;
-            if (!runId) {
-                console.error('❌ No run ID in response:', result);
-                throw new Error('No run ID received');
+
+            const items = await resp.json();
+            console.log(`📊 Received ${items.length} items from dataset`);
+
+            if (!Array.isArray(items)) {
+                console.warn('⚠️ Response is not an array:', items);
+                renderTable([], platform);
+            } else {
+                renderTable(items, platform);
             }
-            currentDatasetId = result.data?.defaultDatasetId || null;
-            if (!currentDatasetId) {
-                console.warn('⚠️ No defaultDatasetId in response, will try to get it later.');
-            }
-            console.log(`📌 Run ID: ${runId}, Dataset ID: ${currentDatasetId || 'pending'}`);
 
-            isPolling = true;
-            let attempts = 0;
-            const maxAttempts = 50;
-
-            pollInterval = setInterval(async () => {
-                attempts++;
-                if (!isPolling) { clearInterval(pollInterval); pollInterval = null; return; }
-                try {
-                    const statusUrl = `https://api.apify.com/v2/actor-runs/${runId}?token=${API_TOKEN}`;
-                    const sRes = await fetch(statusUrl, { method: 'GET', mode: 'cors', headers: { 'Accept': 'application/json' } });
-                    if (!sRes.ok) {
-                        const errText = await sRes.text();
-                        console.error('❌ Status fetch error:', sRes.status, errText);
-                        throw new Error(`Status fetch failed: ${sRes.status}`);
-                    }
-                    const sData = await sRes.json();
-                    const runStatus = sData.data?.status;
-                    console.log(`🔄 Poll #${attempts}: status = ${runStatus}`);
-                    let progress = 30 + (attempts/maxAttempts)*40;
-                    progress = Math.min(80, progress);
-
-                    if (runStatus === 'SUCCEEDED') {
-                        clearInterval(pollInterval); pollInterval = null; isPolling = false;
-                        updateStatus('<i class="fas fa-cloud-download-alt me-2"></i> Pulling data...', 85, true);
-                        console.log('✅ Run succeeded, fetching dataset...');
-                        if (!currentDatasetId) {
-                            currentDatasetId = sData.data?.defaultDatasetId;
-                            console.log('📌 Retrieved dataset ID from run status:', currentDatasetId);
-                        }
-                        if (currentDatasetId) {
-                            const dUrl = `https://api.apify.com/v2/datasets/${currentDatasetId}/items?token=${API_TOKEN}&clean=true&limit=1000`;
-                            const dRes = await fetch(dUrl, { method: 'GET', mode: 'cors', headers: { 'Accept': 'application/json' } });
-                            if (!dRes.ok) {
-                                const errText = await dRes.text();
-                                console.error('❌ Dataset fetch error:', dRes.status, errText);
-                                throw new Error(`Dataset fetch failed: ${dRes.status}`);
-                            }
-                            const items = await dRes.json();
-                            console.log(`📊 Received ${items.length} items from dataset`);
-                            if (!Array.isArray(items)) {
-                                console.warn('⚠️ Dataset response is not an array:', items);
-                                renderTable([], platform);
-                            } else {
-                                renderTable(items, platform);
-                            }
-                            const total = currentItems.length;
-                            const summary = platform === 'linkedin' ? 
-                                ` (📧 ${emailStats.found} found, ${emailStats.predicted} predicted)` : '';
-                            const filterMsg = platform === 'linkedin' && filteredCount > 0 ? ` (filtered ${filteredCount})` : '';
-                            updateStatus(`<i class="fas fa-check-circle text-success me-2"></i> Done! ${total} leads${filterMsg}${summary}`, 100, true);
-                            if (downloadBtn) downloadBtn.disabled = (total === 0);
-                            console.log(`🏁 Finished: ${total} leads displayed (target was ${targetCount})`);
-                        } else {
-                            console.error('❌ No dataset ID available after run');
-                            showError('Dataset ID missing');
-                        }
-                    } else if (runStatus === 'FAILED' || runStatus === 'ABORTED' || runStatus === 'TIMED-OUT') {
-                        clearInterval(pollInterval); pollInterval = null; isPolling = false;
-                        console.error(`❌ Run ended with status: ${runStatus}`);
-                        showError(`Run ${runStatus}`);
-                    } else {
-                        updateStatus(`<i class="fas fa-spinner fa-spin me-2"></i> Status: ${runStatus || 'Running'} (attempt ${attempts})`, progress, true);
-                    }
-                    if (attempts >= maxAttempts && isPolling) {
-                        clearInterval(pollInterval); pollInterval = null; isPolling = false;
-                        console.warn('⚠️ Max polling attempts reached, giving up.');
-                        showError('Timeout – try again');
-                    }
-                } catch (e) {
-                    clearInterval(pollInterval); pollInterval = null; isPolling = false;
-                    console.error('❌ Polling error:', e.message);
-                    showError(`Poll error: ${e.message}`);
-                }
-            }, 4000);
+            const total = currentItems.length;
+            const summary = platform === 'linkedin' ? 
+                ` (📧 ${emailStats.found} found, ${emailStats.fallback} not available)` : '';
+            const filterMsg = platform === 'linkedin' && filteredCount > 0 ? ` (filtered ${filteredCount})` : '';
+            updateStatus(`<i class="fas fa-check-circle text-success me-2"></i> Done! ${total} leads${filterMsg}${summary}`, 100, true);
+            if (downloadBtn) downloadBtn.disabled = (total === 0);
+            console.log(`🏁 Finished: ${total} leads displayed`);
 
         } catch (e) {
-            console.error('❌ runActor error:', e.message);
+            console.error('❌ runActorNoCORS error:', e.message);
             showError(`Error: ${e.message}`);
-            isPolling = false;
-            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
         }
     }
 
@@ -579,36 +478,24 @@
         };
     }
 
-    // =============================================
-    // ===== FIXED: LinkedIn Input with all possible parameters =====
-    // =============================================
-    // ===== استبدل دالة prepareLinkedinInput بالكامل =====
-function prepareLinkedinInput() {
-    const linkedinJobEl = getEl('linkedinJob');
-    const linkedinCountryEl = getEl('linkedinCountry');
-    const job = linkedinJobEl ? linkedinJobEl.value.trim() : 'Marketing Manager';
-    const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
-    const max = getLeadCount();
+    function prepareLinkedinInput() {
+        const linkedinJobEl = getEl('linkedinJob');
+        const linkedinCountryEl = getEl('linkedinCountry');
+        const job = linkedinJobEl ? linkedinJobEl.value.trim() : 'Marketing Manager';
+        const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
+        const max = getLeadCount();
 
-    // بناء استعلام البحث (مثل: "Marketing Manager Egypt")
-    const searchQuery = `${job} ${country}`;
+        // Build search URL for LinkedIn people search
+        const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(job + ' ' + country)}`;
+        console.log('🔗 LinkedIn searchUrl:', searchUrl);
 
-    console.log('🔍 LinkedIn Search Query:', searchQuery);
-
-    // مدخلات Actor الرسمي للبحث عن الأشخاص
-    return {
-        "search": searchQuery,
-        "maxResults": max,
-        "maxPages": 1,          // صفحة واحدة فقط للسرعة
-        "useProxy": true,
-        "includeUnavailable": false,
-        "saveHtml": false,
-        "saveImages": false
-    };
-}
-
-// ===== تحديث دالة runActor لتستقبل الـ Actor ID الجديد =====
-// (لا حاجة لتغييرها، فقط استخدم المعرف الجديد في linkedin.js)
+        return {
+            "searchUrl": searchUrl,
+            "profileScraperMode": "Full",
+            "maxItems": max,
+            "startPage": 1
+        };
+    }
 
     // ===== Expose =====
     window.Outflo = {
@@ -623,7 +510,7 @@ function prepareLinkedinInput() {
         showError,
         resetAllData,
         downloadCsv,
-        runActor,
+        runActorNoCORS,
         prepareGoogleInput,
         prepareLinkedinInput,
         saveToDatabase,
@@ -633,6 +520,6 @@ function prepareLinkedinInput() {
         targetCount
     };
 
-    console.log('🚀 Outflo Core Engine loaded with organized table display');
-    console.log('🔗 LinkedIn input now includes searchUrl, searchQuery, keywords, location');
+    console.log('🚀 Outflo Core Engine loaded with No-CORS method');
+    console.log('📧 Only real emails from Apify will be displayed');
 })();
