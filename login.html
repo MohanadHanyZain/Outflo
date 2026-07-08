@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Outflo — Login</title>
+
+    <!-- Google Font (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0B0F19;
+            color: #E5E7EB;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .auth-card {
+            background: #1A202C;
+            border: 1px solid #2D3748;
+            border-radius: 16px;
+            padding: 40px 36px;
+            transition: border-color 0.2s ease;
+        }
+        .auth-card:hover {
+            border-color: #4F46E5;
+        }
+
+        .auth-brand {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .auth-brand h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #818CF8, #6366F1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .auth-brand p {
+            color: #6B7280;
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 6px;
+        }
+        .form-group .form-control {
+            width: 100%;
+            background: #111827;
+            border: 1px solid #2D3748;
+            border-radius: 8px;
+            color: #E5E7EB;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+        }
+        .form-group .form-control:focus {
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            outline: none;
+        }
+        .form-group .form-control::placeholder {
+            color: #6B7280;
+        }
+
+        .btn-auth {
+            width: 100%;
+            padding: 12px;
+            background: #6366F1;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-auth:hover {
+            background: #4F46E5;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+        }
+        .btn-auth:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 24px 0;
+            color: #6B7280;
+            font-size: 0.8rem;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #2D3748;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #6B7280;
+        }
+        .auth-footer a {
+            color: #818CF8;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+        .auth-footer a:hover {
+            color: #6366F1;
+        }
+
+        .error-message {
+            background: #3B1F2E;
+            color: #F472B6;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: none;
+            border: 1px solid #5C2A3A;
+        }
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background: #064E3B;
+            color: #34D399;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: none;
+            border: 1px solid #0A6B4A;
+        }
+        .success-message.show {
+            display: block;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .toggle-mode {
+            color: #818CF8;
+            cursor: pointer;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+        .toggle-mode:hover {
+            color: #6366F1;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6B7280;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px;
+        }
+        .password-wrapper .toggle-password:hover {
+            color: #9CA3AF;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="auth-card">
+
+            <div class="auth-brand">
+                <h1>Outflo</h1>
+                <p>B2B Intelligence Platform</p>
+            </div>
+
+            <!-- Error / Success Messages -->
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <!-- Login Form -->
+            <form id="authForm" autocomplete="off">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" class="form-control" id="email" placeholder="you@example.com" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" class="form-control" id="password" placeholder="••••••••" required minlength="6" />
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-auth" id="submitBtn">
+                    <span id="btnText">Sign In</span>
+                </button>
+            </form>
+
+            <div class="auth-divider">or</div>
+
+            <div class="auth-footer">
+                <span id="toggleText">Don't have an account?</span>
+                <span class="toggle-mode" id="toggleMode">Create Account</span>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // Supabase Configuration
+        // =============================================
+        const SUPABASE_URL = 'https://smhkccanevtpdiuemseb.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaGtjY2FuZXZ0cGRpdWVtc2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MDg0NTQsImV4cCI6MjA5OTA4NDQ1NH0.KzynIoWK_MYc59Syk1b3KKGdhDab2cJKAWLRT6uId30';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // =============================================
+        // DOM Elements
+        // =============================================
+        const form = document.getElementById('authForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const errorMsg = document.getElementById('errorMessage');
+        const successMsg = document.getElementById('successMessage');
+        const toggleMode = document.getElementById('toggleMode');
+        const toggleText = document.getElementById('toggleText');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+
+        let isLoginMode = true;
+
+        // =============================================
+        // Toggle Password Visibility
+        // =============================================
+        togglePasswordBtn.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        });
+
+        // =============================================
+        // Toggle Login / Signup Mode
+        // =============================================
+        toggleMode.addEventListener('click', function() {
+            isLoginMode = !isLoginMode;
+            if (isLoginMode) {
+                toggleMode.textContent = 'Create Account';
+                toggleText.textContent = "Don't have an account?";
+                btnText.textContent = 'Sign In';
+                document.querySelector('.auth-brand p').textContent = 'B2B Intelligence Platform';
+            } else {
+                toggleMode.textContent = 'Sign In';
+                toggleText.textContent = "Already have an account?";
+                btnText.textContent = 'Create Account';
+                document.querySelector('.auth-brand p').textContent = 'Start your free trial';
+            }
+            // Clear messages
+            errorMsg.classList.remove('show');
+            successMsg.classList.remove('show');
+        });
+
+        // =============================================
+        // Show/Hide Messages
+        // =============================================
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.add('show');
+            successMsg.classList.remove('show');
+        }
+
+        function showSuccess(message) {
+            successMsg.textContent = message;
+            successMsg.classList.add('show');
+            errorMsg.classList.remove('show');
+        }
+
+        function clearMessages() {
+            errorMsg.classList.remove('show');
+            successMsg.classList.remove('show');
+        }
+
+        function setLoading(isLoading) {
+            submitBtn.disabled = isLoading;
+            if (isLoading) {
+                btnText.innerHTML = '<span class="loading-spinner"></span> Processing...';
+            } else {
+                btnText.textContent = isLoginMode ? 'Sign In' : 'Create Account';
+            }
+        }
+
+        // =============================================
+        // Check if user is already logged in
+        // =============================================
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkSession();
+
+        // =============================================
+        // Handle Form Submit
+        // =============================================
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearMessages();
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                showError('Please fill in all fields.');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters.');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                if (isLoginMode) {
+                    // ===== LOGIN =====
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    });
+
+                    if (error) {
+                        if (error.message.includes('Invalid login credentials')) {
+                            showError('Invalid email or password. Please try again.');
+                        } else if (error.message.includes('Email not confirmed')) {
+                            showError('Please confirm your email before signing in.');
+                        } else {
+                            showError(error.message);
+                        }
+                        setLoading(false);
+                        return;
+                    }
+
+                    if (data.session) {
+                        showSuccess('Welcome back! Redirecting...');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
+                    }
+
+                } else {
+                    // ===== SIGNUP =====
+                    const { data, error } = await supabase.auth.signUp({
+                        email: email,
+                        password: password,
+                        options: {
+                            data: {
+                                full_name: email.split('@')[0]
+                            }
+                        }
+                    });
+
+                    if (error) {
+                        if (error.message.includes('User already registered')) {
+                            showError('This email is already registered. Please sign in instead.');
+                            // Auto switch to login mode after 2 seconds
+                            setTimeout(() => {
+                                toggleMode.click();
+                            }, 2000);
+                        } else {
+                            showError(error.message);
+                        }
+                        setLoading(false);
+                        return;
+                    }
+
+                    if (data.user) {
+                        if (data.user.identities && data.user.identities.length === 0) {
+                            showError('This email is already registered. Please sign in instead.');
+                            setTimeout(() => {
+                                toggleMode.click();
+                            }, 2000);
+                            setLoading(false);
+                            return;
+                        }
+
+                        showSuccess('Account created successfully! Please check your email to confirm your account.');
+                        setLoading(false);
+                        // Auto switch to login after 3 seconds
+                        setTimeout(() => {
+                            if (!isLoginMode) {
+                                toggleMode.click();
+                            }
+                            emailInput.value = email;
+                            passwordInput.value = '';
+                        }, 3000);
+                        return;
+                    }
+                }
+
+            } catch (err) {
+                showError('An unexpected error occurred. Please try again.');
+                console.error('Auth error:', err);
+            }
+
+            setLoading(false);
+        });
+
+        // =============================================
+        // Auto-login after email confirmation (optional)
+        // =============================================
+        async function handleEmailConfirmation() {
+            const hash = window.location.hash;
+            if (hash && hash.includes('access_token')) {
+                const params = new URLSearchParams(hash.substring(1));
+                const accessToken = params.get('access_token');
+                if (accessToken) {
+                    const { data, error } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: params.get('refresh_token') || ''
+                    });
+                    if (!error && data.session) {
+                        window.location.href = 'index.html';
+                    }
+                }
+            }
+        }
+        handleEmailConfirmation();
+
+        // =============================================
+        // Enter key to submit
+        // =============================================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.activeElement.tagName !== 'BUTTON') {
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        console.log('🔐 Auth system ready');
+    </script>
+
+</body>
+</html>

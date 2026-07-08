@@ -55,6 +55,13 @@
         </div>
         <div class="header-actions">
             <span class="badge-status"><i class="fas fa-circle" style="font-size: 0.4rem; vertical-align: middle; margin-right: 4px;"></i> Live</span>
+
+            <span class="badge-status" id="userDisplay" style="background: #1E3A5F; color: #60A5FA;">
+        <i class="fas fa-user me-1"></i> user@email.com
+    </span>
+    <button class="btn btn-outline-custom btn-sm" id="logoutBtn" style="padding: 4px 12px; font-size: 0.75rem;">
+        <i class="fas fa-sign-out-alt me-1"></i> Logout
+    </button>
         </div>
     </header>
 
@@ -173,6 +180,7 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -219,6 +227,66 @@
                 alert('XLS export will be available after data collection.');
             });
         });
+
+
+
+         // =============================================
+    // Supabase Configuration
+    // =============================================
+    const SUPABASE_URL = 'https://smhkccanevtpdiuemseb.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaGtjY2FuZXZ0cGRpdWVtc2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MDg0NTQsImV4cCI6MjA5OTA4NDQ1NH0.KzynIoWK_MYc59Syk1b3KKGdhDab2cJKAWLRT6uId30';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // =============================================
+    // Check authentication
+    // =============================================
+    async function checkAuth() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            window.location.href = 'login.html';
+        } else {
+            // Display user email
+            const userEmail = session.user.email;
+            const userDisplay = document.getElementById('userDisplay');
+            if (userDisplay) {
+                userDisplay.textContent = userEmail;
+            }
+        }
+    }
+
+    // =============================================
+    // Logout function
+    // =============================================
+    async function logout() {
+        await supabase.auth.signOut();
+        window.location.href = 'login.html';
+    }
+
+    // =============================================
+    // Listen for auth changes
+    // =============================================
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+            window.location.href = 'login.html';
+        }
+        if (event === 'SIGNED_IN' && session) {
+            // Session is valid
+        }
+    });
+
+    // =============================================
+    // Run auth check when DOM is ready
+    // =============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        checkAuth();
+
+        // Add logout button functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', logout);
+        }
+    });
     </script>
 </body>
 </html>
