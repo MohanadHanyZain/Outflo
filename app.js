@@ -579,7 +579,9 @@
         };
     }
 
-    // ===== FIXED: LinkedIn Input with searchUrl =====
+    // =============================================
+    // ===== FIXED: LinkedIn Input with all possible parameters =====
+    // =============================================
     function prepareLinkedinInput() {
         const linkedinJobEl = getEl('linkedinJob');
         const linkedinCountryEl = getEl('linkedinCountry');
@@ -588,16 +590,22 @@
         const max = getLeadCount();
         
         // Build search URL for LinkedIn people search
-        const keywords = `${job} ${country}`.replace(/ /g, '%20');
-        const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${keywords}`;
+        const encodedKeywords = encodeURIComponent(`${job} ${country}`);
+        const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodedKeywords}`;
         
         console.log('🔗 LinkedIn searchUrl:', searchUrl);
+        console.log('🔍 Job:', job, 'Country:', country);
         
+        // Send ALL possible parameters that this actor might accept
         return {
             "searchUrl": searchUrl,
+            "searchQuery": `${job} ${country}`,
+            "keywords": job,
+            "location": country,
             "profileScraperMode": "Full",
             "maxItems": max,
-            "startPage": 1
+            "startPage": 1,
+            "endPage": 1  // Only first page for speed
         };
     }
 
@@ -625,5 +633,5 @@
     };
 
     console.log('🚀 Outflo Core Engine loaded with organized table display');
-    console.log('🔗 LinkedIn now uses searchUrl instead of searchQuery');
+    console.log('🔗 LinkedIn input now includes searchUrl, searchQuery, keywords, location');
 })();
