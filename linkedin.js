@@ -7,84 +7,50 @@ document.addEventListener('DOMContentLoaded', function() {
     const debugBtn = document.getElementById('debugBtn');
 
     // =============================================
-    // Save LinkedIn results to database
+    // Save LinkedIn results to database (DIRECT)
     // =============================================
-    async function saveLinkedinResultsToDb(items, platform) {
-        console.log('💾 Saving LinkedIn results to database...');
-        console.log('📊 Items count:', items ? items.length : 0);
+    async function saveLinkedinResultsDirect(items, platform) {
+        console.log('💾💾💾 SAVING LINKEDIN RESULTS DIRECTLY...');
         
         try {
-            const userData = await Auth.getCurrentUser();
-            if (!userData) {
+            const user = await Auth.getCurrentUser();
+            if (!user) {
                 console.error('❌ No user logged in');
+                alert('Please login first!');
                 return false;
             }
             
-            console.log('👤 User ID:', userData.id);
+            console.log('👤 User:', user.email, 'ID:', user.id);
             
             const searchQuery = document.getElementById('linkedinJob').value.trim() || 'Marketing Manager';
             const location = document.getElementById('linkedinCountry').value.trim() || 'Egypt';
             
-            console.log('🔍 Search:', searchQuery, '📍 Location:', location);
+            console.log('🔍 Search:', searchQuery);
+            console.log('📍 Location:', location);
+            console.log('📊 Items count:', items.length);
             
             const result = await Auth.saveLead(
-                userData.id,
+                user.id,
                 'linkedin',
                 searchQuery,
                 location,
-                items || []
+                items
             );
             
             if (result) {
-                console.log('✅ LinkedIn results saved to database successfully!');
-                console.log('📝 Saved lead ID:', result.id);
+                console.log('✅✅✅ SAVED TO DATABASE SUCCESSFULLY!');
+                alert('✅ Data saved to database! Check your dashboard.');
                 return true;
             } else {
-                console.error('❌ Failed to save LinkedIn results');
+                console.error('❌ Failed to save');
+                alert('❌ Failed to save data to database. Check console for errors.');
                 return false;
             }
         } catch (err) {
-            console.error('❌ Error saving LinkedIn results:', err);
+            console.error('❌❌❌ Error saving:', err);
+            alert('Error saving data: ' + err.message);
             return false;
         }
-    }
-
-    // =============================================
-    // Override renderTable to save data
-    // =============================================
-    let isSaving = false;
-
-    function setupSaveInterceptor() {
-        if (!window.Outflo) {
-            console.log('⏳ Waiting for Outflo to load...');
-            setTimeout(setupSaveInterceptor, 500);
-            return;
-        }
-
-        console.log('✅ Outflo loaded, setting up save interceptor');
-        
-        const originalRender = window.Outflo.renderTable;
-        
-        window.Outflo.renderTable = function(items, platform) {
-            console.log('📊 RenderTable called with', items ? items.length : 0, 'items');
-            
-            // Call original render
-            originalRender(items, platform);
-            
-            // Save to database if not already saving
-            if (!isSaving && items && items.length > 0) {
-                isSaving = true;
-                saveLinkedinResultsToDb(items, platform).then(() => {
-                    isSaving = false;
-                }).catch(() => {
-                    isSaving = false;
-                });
-            } else if (items && items.length === 0) {
-                console.log('⚠️ No items to save');
-            }
-        };
-        
-        console.log('✅ Save interceptor set up');
     }
 
     // =============================================
@@ -92,12 +58,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // =============================================
     if (runLinkedinBtn) {
         runLinkedinBtn.addEventListener('click', function() {
-            console.log('🚀 Running LinkedIn scraper...');
+            console.log('🚀🚀🚀 RUNNING LINKEDIN SCRAPER...');
             
             if (!window.Outflo) {
                 console.error('❌ Outflo not loaded');
                 return;
             }
+            
+            Auth.getCurrentUser().then(user => {
+                if (!user) {
+                    alert('Please login first!');
+                    return;
+                }
+                console.log('✅ User logged in:', user.email);
+            });
             
             const input = window.Outflo.prepareLinkedinInput();
             const count = window.Outflo.getLeadCount();
@@ -105,8 +79,18 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('📦 Input:', input);
             console.log('🎯 Target count:', count);
             
-            // Reset save flag
-            isSaving = false;
+            const originalRender = window.Outflo.renderTable;
+            
+            window.Outflo.renderTable = function(items, platform) {
+                console.log('📊 RenderTable called with', items.length, 'items');
+                originalRender(items, platform);
+                
+                if (items && items.length > 0) {
+                    saveLinkedinResultsDirect(items, platform);
+                } else {
+                    console.log('⚠️ No items to save');
+                }
+            };
             
             window.Outflo.runActor('M2FMdjRVeF1HPGFcc', input, 'linkedin', count);
         });
@@ -127,11 +111,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (debugBtn) {
         debugBtn.addEventListener('click', function() {
             console.log('🔍 LinkedIn Debug');
+            console.log('Outflo loaded:', !!window.Outflo);
             if (window.Outflo) {
                 console.log('Items:', window.Outflo.currentItems ? window.Outflo.currentItems.length : 0);
-                console.log('Email stats:', window.Outflo.emailStats);
             }
-            // Check if user is logged in
             Auth.getCurrentUser().then(user => {
                 console.log('👤 Current user:', user ? user.email : 'Not logged in');
             });
@@ -152,25 +135,5 @@ document.addEventListener('DOMContentLoaded', function() {
     // =============================================
     // Initialize
     // =============================================
-    console.log('🔗 LinkedIn page loading...');
-    
-    // Wait for Outflo to load
-    if (window.Outflo) {
-        window.Outflo.resetAllData();
-        window.Outflo.buildTableHeaders('linkedin');
-        setupSaveInterceptor();
-    } else {
-        // Wait for Outflo
-        const checkOutflo = setInterval(() => {
-            if (window.Outflo) {
-                clearInterval(checkOutflo);
-                window.Outflo.resetAllData();
-                window.Outflo.buildTableHeaders('linkedin');
-                setupSaveInterceptor();
-                console.log('✅ LinkedIn page ready');
-            }
-        }, 100);
-    }
-    
     console.log('🔗 LinkedIn page ready');
 });

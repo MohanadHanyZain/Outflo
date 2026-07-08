@@ -43,12 +43,45 @@ async function getUserProfile(userId) {
 }
 
 // =============================================
-// ===== SAVE LEAD TO DATABASE =====
+// ===== SAVE LEAD TO DATABASE (FIXED) =====
 // =============================================
 async function saveLead(userId, platform, searchQuery, location, resultsData) {
-    console.log('💾 Saving lead to database...', { userId, platform, searchQuery, location, count: resultsData ? resultsData.length : 0 });
+    console.log('💾 SAVING LEAD TO DATABASE...');
+    console.log('📋 User ID:', userId);
+    console.log('📋 Platform:', platform);
+    console.log('📋 Search:', searchQuery);
+    console.log('📋 Location:', location);
+    console.log('📋 Results count:', resultsData ? resultsData.length : 0);
     
     try {
+        // تحقق من وجود المستخدم في جدول users
+        const { data: userCheck, error: userError } = await supabaseClient
+            .from('users')
+            .select('id')
+            .eq('id', userId)
+            .single();
+        
+        if (userError || !userCheck) {
+            console.log('⚠️ User not found in users table, creating...');
+            // إنشاء المستخدم إذا لم يكن موجوداً
+            const { error: insertError } = await supabaseClient
+                .from('users')
+                .insert({
+                    id: userId,
+                    email: (await getCurrentUser()).email,
+                    full_name: (await getCurrentUser()).user_metadata?.full_name || 'User'
+                });
+            
+            if (insertError) {
+                console.error('❌ Failed to create user:', insertError);
+            } else {
+                console.log('✅ User created successfully');
+            }
+        } else {
+            console.log('✅ User found in database');
+        }
+
+        // حفظ البيانات
         const { data, error } = await supabaseClient
             .from('leads')
             .insert({
@@ -60,18 +93,19 @@ async function saveLead(userId, platform, searchQuery, location, resultsData) {
                 data: resultsData || [],
                 status: resultsData && resultsData.length > 0 ? 'ready' : 'pending'
             })
-            .select()
-            .single();
+            .select();
 
         if (error) {
-            console.error('❌ Error saving lead:', error);
+            console.error('❌ ERROR saving lead:', error);
+            console.error('❌ Error details:', JSON.stringify(error));
             return null;
         }
         
-        console.log('✅ Lead saved successfully!', data);
+        console.log('✅ LEAD SAVED SUCCESSFULLY!');
+        console.log('📝 Saved data:', data);
         return data;
     } catch (err) {
-        console.error('❌ Exception saving lead:', err);
+        console.error('❌ EXCEPTION saving lead:', err);
         return null;
     }
 }
@@ -80,7 +114,7 @@ async function saveLead(userId, platform, searchQuery, location, resultsData) {
 // Get all leads for a user
 // =============================================
 async function getUserLeads(userId) {
-    console.log('📊 Fetching leads for user:', userId);
+    console.log('📊 FETCHING leads for user:', userId);
     
     try {
         const { data, error } = await supabaseClient
@@ -90,14 +124,15 @@ async function getUserLeads(userId) {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('❌ Error fetching leads:', error);
+            console.error('❌ ERROR fetching leads:', error);
             return [];
         }
         
-        console.log('✅ Found', data.length, 'leads');
+        console.log('✅ FOUND', data.length, 'leads');
+        console.log('📊 First lead:', data[0] || 'No leads');
         return data;
     } catch (err) {
-        console.error('❌ Exception fetching leads:', err);
+        console.error('❌ EXCEPTION fetching leads:', err);
         return [];
     }
 }
@@ -106,6 +141,8 @@ async function getUserLeads(userId) {
 // Get lead statistics
 // =============================================
 async function getUserLeadStats(userId) {
+    console.log('📊 FETCHING stats for user:', userId);
+    
     try {
         const { data, error } = await supabaseClient
             .from('leads')
@@ -113,9 +150,11 @@ async function getUserLeadStats(userId) {
             .eq('user_id', userId);
 
         if (error) {
-            console.error('❌ Error fetching stats:', error);
+            console.error('❌ ERROR fetching stats:', error);
             return { total: 0, google: 0, linkedin: 0, pending: 0, ready: 0 };
         }
+
+        console.log('✅ Found', data.length, 'leads for stats');
 
         const stats = {
             total: 0,
@@ -133,9 +172,10 @@ async function getUserLeadStats(userId) {
             if (lead.status === 'ready') stats.ready++;
         });
 
+        console.log('📊 Stats calculated:', stats);
         return stats;
     } catch (err) {
-        console.error('❌ Exception fetching stats:', err);
+        console.error('❌ EXCEPTION fetching stats:', err);
         return { total: 0, google: 0, linkedin: 0, pending: 0, ready: 0 };
     }
 }
@@ -144,7 +184,7 @@ async function getUserLeadStats(userId) {
 // Load dashboard data
 // =============================================
 async function loadDashboardData(userId) {
-    console.log('📊 Loading dashboard data for user:', userId);
+    console.log('📊 LOADING dashboard data for user:', userId);
     const stats = await getUserLeadStats(userId);
     const leads = await getUserLeads(userId);
     return { stats, leads };
@@ -162,6 +202,7 @@ async function logoutUser() {
 // Auth state listener
 // =============================================
 supabaseClient.auth.onAuthStateChange((event, session) => {
+    console.log('🔐 Auth event:', event);
     if (event === 'SIGNED_OUT') {
         if (!window.location.pathname.includes('login.html')) {
             window.location.href = 'login.html';
@@ -203,6 +244,28 @@ async function initAuth() {
 }
 
 // =============================================
+// TEST: Insert test lead
+// =============================================
+async function testInsertLead() {
+    console.log('🧪 TESTING lead insertion...');
+    const user = await getCurrentUser();
+    if (!user) {
+        console.log('❌ No user logged in');
+        return;
+    }
+    
+    const result = await saveLead(
+        user.id,
+        'google',
+        'test restaurant',
+        'Dubai',
+        [{ name: 'Test Place', phone: '+123456789' }]
+    );
+    
+    console.log('🧪 Test result:', result);
+}
+
+// =============================================
 // Export
 // =============================================
 window.Auth = {
@@ -216,7 +279,10 @@ window.Auth = {
     logoutUser,
     updateUserDisplay,
     initAuth,
+    testInsertLead,
     supabase: supabaseClient
 };
 
 console.log('🔐 Auth system initialized');
+console.log('📧 Supabase URL:', SUPABASE_URL);
+console.log('🔑 Anon key length:', SUPABASE_ANON_KEY.length);
