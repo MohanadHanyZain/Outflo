@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Outflo — Dashboard</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Google Font (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Extra style for empty dashboard state */
+        .dashboard-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            text-align: center;
+        }
+        .dashboard-empty i {
+            font-size: 4rem;
+            color: #2D3748;
+            margin-bottom: 20px;
+        }
+        .dashboard-empty h5 {
+            color: #E5E7EB;
+            font-weight: 600;
+        }
+        .dashboard-empty p {
+            color: #6B7280;
+            max-width: 400px;
+        }
+        .dashboard-empty .btn-primary-custom {
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="app-header">
+        <div class="d-flex align-items-center gap-3">
+            <button class="toggle-sidebar" id="sidebarToggle" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="brand">
+                <span>Outflo</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <span class="badge-status"><i class="fas fa-circle" style="font-size: 0.4rem; vertical-align: middle; margin-right: 4px;"></i> Live</span>
+        </div>
+    </header>
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="mainSidebar">
+        <nav class="nav flex-column">
+            <div class="nav-section">Platform</div>
+            <a href="index.html" class="nav-link active">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+            <a href="gmaps.html" class="nav-link">
+                <i class="fas fa-map-pin"></i> Google Maps
+            </a>
+            <a href="linkedin.html" class="nav-link">
+                <i class="fab fa-linkedin"></i> LinkedIn
+            </a>
+        </nav>
+        <div class="mt-auto pt-3 border-top border-secondary border-opacity-25" style="margin-top: 40px;">
+            <div class="text-secondary small" style="padding: 0 16px;">
+                <i class="fas fa-shield-alt me-1"></i> Secured
+            </div>
+            <div class="text-secondary small" style="padding: 0 16px; margin-top: 4px;">
+                <i class="fas fa-circle text-success me-1" style="font-size: 0.4rem;"></i> v2.0
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content" id="mainContent">
+
+        <h1 class="h4 fw-bold text-light mb-4">Dashboard</h1>
+
+        <!-- Stats Cards (Only Total Leads) -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-4 col-lg-3">
+                <div class="stat-box">
+                    <div class="stat-number" id="dashTotalLeads">0</div>
+                    <div class="stat-label">Total Leads</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section (Keep for future use) -->
+        <div class="glass-card mb-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-light small text-uppercase">Platform</label>
+                    <select class="form-control form-control-custom" id="filterPlatform">
+                        <option value="all">All platforms</option>
+                        <option value="google">Google Maps</option>
+                        <option value="linkedin">LinkedIn</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-light small text-uppercase">Source</label>
+                    <select class="form-control form-control-custom" id="filterSource">
+                        <option value="all">All sources</option>
+                        <option value="google">Google Maps</option>
+                        <option value="linkedin">LinkedIn</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-light small text-uppercase">Search</label>
+                    <input type="text" class="form-control form-control-custom" id="filterSearch" placeholder="Search..." />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-light small text-uppercase">Date</label>
+                    <select class="form-control form-control-custom" id="filterDate">
+                        <option value="any">Any time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This week</option>
+                        <option value="month">This month</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 d-flex gap-2 flex-wrap">
+                    <button class="btn btn-primary-custom" id="filterSearchBtn">
+                        <i class="fas fa-search me-1"></i> Search
+                    </button>
+                    <button class="btn btn-outline-custom" id="filterClearBtn">
+                        <i class="fas fa-undo me-1"></i> Clear
+                    </button>
+                    <button class="btn btn-outline-custom" id="exportCsvBtn">
+                        <i class="fas fa-file-csv me-1"></i> Export CSV
+                    </button>
+                    <button class="btn btn-outline-custom" id="exportXlsBtn">
+                        <i class="fas fa-file-excel me-1"></i> Export XLS
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty Dashboard State (No Results Table) -->
+        <div class="glass-card p-0 overflow-hidden">
+            <div class="dashboard-empty">
+                <i class="fas fa-inbox"></i>
+                <h5>No Data Collected Yet</h5>
+                <p>Run a scraper from <strong>Google Maps</strong> or <strong>LinkedIn</strong> to start gathering leads. All extracted data will appear in the respective platform pages.</p>
+                <div class="d-flex gap-3">
+                    <a href="gmaps.html" class="btn btn-primary-custom">
+                        <i class="fas fa-map-pin me-2"></i> Go to Google Maps
+                    </a>
+                    <a href="linkedin.html" class="btn btn-primary-custom" style="background: #0A66C2;">
+                        <i class="fab fa-linkedin me-2"></i> Go to LinkedIn
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3 text-secondary small text-center opacity-50">
+            <i class="fas fa-lock me-1"></i> Secured · Outflo v2.0 · B2B Intelligence
+        </div>
+
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sidebar toggle
+            const toggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('mainSidebar');
+            const main = document.getElementById('mainContent');
+            if (toggle && sidebar && main) {
+                toggle.addEventListener('click', function() {
+                    if (window.innerWidth <= 992) {
+                        sidebar.classList.toggle('open');
+                    } else {
+                        sidebar.classList.toggle('collapsed');
+                        main.classList.toggle('expanded');
+                    }
+                });
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth <= 992) {
+                        sidebar.classList.remove('collapsed');
+                        main.classList.remove('expanded');
+                    } else {
+                        sidebar.classList.remove('open');
+                    }
+                });
+            }
+
+            // Update total leads (example - will be updated dynamically later)
+            document.getElementById('dashTotalLeads').innerText = '0';
+
+            // Filter buttons (placeholder for future functionality)
+            document.getElementById('filterSearchBtn').addEventListener('click', function() {
+                alert('Search functionality will be available after data collection.');
+            });
+            document.getElementById('filterClearBtn').addEventListener('click', function() {
+                document.getElementById('filterSearch').value = '';
+                document.getElementById('filterPlatform').value = 'all';
+                document.getElementById('filterSource').value = 'all';
+                document.getElementById('filterDate').value = 'any';
+            });
+            document.getElementById('exportCsvBtn').addEventListener('click', function() {
+                alert('CSV export will be available after data collection.');
+            });
+            document.getElementById('exportXlsBtn').addEventListener('click', function() {
+                alert('XLS export will be available after data collection.');
+            });
+        });
+    </script>
+</body>
+</html>

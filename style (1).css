@@ -1,0 +1,384 @@
+/* ===== Reset & Base ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0B0F19;
+    color: #E5E7EB;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #1A202C;
+}
+::-webkit-scrollbar-thumb {
+    background: #4F46E5;
+    border-radius: 10px;
+}
+
+/* ===== Header ===== */
+.app-header {
+    background: #111827;
+    border-bottom: 1px solid #2D3748;
+    padding: 12px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+}
+.app-header .brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.5px;
+}
+.app-header .brand span {
+    background: linear-gradient(135deg, #818CF8, #6366F1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.app-header .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.app-header .header-actions .badge-status {
+    background: #064E3B;
+    color: #34D399;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+.toggle-sidebar {
+    background: transparent;
+    border: none;
+    color: #9CA3AF;
+    font-size: 1.2rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+.toggle-sidebar:hover {
+    background: #1F2937;
+    color: white;
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    bottom: 0;
+    width: 240px;
+    background: #111827;
+    border-right: 1px solid #2D3748;
+    padding: 20px 12px;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 1040;
+    transform: translateX(0);
+}
+.sidebar.collapsed {
+    transform: translateX(-100%);
+}
+.sidebar .nav-link {
+    color: #9CA3AF;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.sidebar .nav-link:hover {
+    background: #1F2937;
+    color: white;
+}
+.sidebar .nav-link.active {
+    background: #1F2937;
+    color: white;
+    border-left: 3px solid #6366F1;
+}
+.sidebar .nav-link i {
+    width: 20px;
+    text-align: center;
+    font-size: 1rem;
+}
+.sidebar .nav-section {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6B7280;
+    padding: 12px 16px 6px;
+    font-weight: 600;
+}
+
+/* ===== Main Content ===== */
+.main-content {
+    margin-left: 240px;
+    padding: 24px 32px;
+    min-height: calc(100vh - 64px);
+    transition: margin-left 0.3s ease;
+    background: #0B0F19;
+}
+.main-content.expanded {
+    margin-left: 0;
+}
+
+/* ===== Cards ===== */
+.glass-card {
+    background: #1A202C;
+    border: 1px solid #2D3748;
+    border-radius: 12px;
+    padding: 20px 24px;
+    transition: border-color 0.2s ease;
+}
+.glass-card:hover {
+    border-color: #4F46E5;
+}
+
+/* ===== Form Controls ===== */
+.form-control-custom {
+    background: #111827;
+    border: 1px solid #2D3748;
+    border-radius: 8px;
+    color: #E5E7EB;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+.form-control-custom:focus {
+    background: #111827;
+    border-color: #6366F1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    color: #E5E7EB;
+    outline: none;
+}
+.form-control-custom::placeholder {
+    color: #6B7280;
+}
+.form-control-custom option {
+    background: #111827;
+    color: #E5E7EB;
+}
+
+/* ===== Buttons ===== */
+.btn-primary-custom {
+    background: #6366F1;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-weight: 600;
+    color: white;
+    transition: all 0.2s ease;
+}
+.btn-primary-custom:hover {
+    background: #4F46E5;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+}
+.btn-outline-custom {
+    background: transparent;
+    border: 1px solid #4F46E5;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-weight: 600;
+    color: #A5B4FC;
+    transition: all 0.2s ease;
+}
+.btn-outline-custom:hover {
+    background: #4F46E5;
+    color: white;
+}
+
+/* ===== Status & Progress ===== */
+.status-pulse {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #6366F1;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+}
+.progress-custom {
+    height: 6px;
+    background: #2D3748;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.progress-custom .progress-bar {
+    background: linear-gradient(90deg, #818CF8, #6366F1);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+/* ===== Table ===== */
+.table-wrap {
+    max-height: 550px;
+    overflow-y: auto;
+    border-radius: 12px;
+}
+.table-wrap::-webkit-scrollbar {
+    width: 4px;
+}
+.table-wrap::-webkit-scrollbar-thumb {
+    background: #4F46E5;
+    border-radius: 10px;
+}
+.table-custom {
+    background: #1A202C;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+.table-custom thead {
+    background: #111827;
+    border-bottom: 2px solid #2D3748;
+}
+.table-custom thead th {
+    color: #9CA3AF;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 14px 16px;
+    border: none;
+}
+.table-custom tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #2D3748;
+    vertical-align: middle;
+    font-size: 0.9rem;
+    color: #D1D5DB;
+}
+.table-custom tbody tr:hover {
+    background: #1F2937;
+}
+.table-custom tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ===== Badges ===== */
+.badge-email {
+    background: #1E3A5F;
+    color: #60A5FA;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: 'Inter', monospace;
+    letter-spacing: 0.3px;
+    display: inline-block;
+}
+.badge-email.found {
+    background: #064E3B;
+    color: #34D399;
+}
+.badge-email.predicted {
+    background: #78350F;
+    color: #FBBF24;
+}
+.badge-email.fallback {
+    background: #3B1F2E;
+    color: #F472B6;
+}
+.badge-phone {
+    background: #1E3A5F;
+    color: #60A5FA;
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+.badge-platform {
+    font-size: 0.65rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: #2D3748;
+    color: #9CA3AF;
+}
+.badge-platform.google {
+    background: #1E3A5F;
+    color: #60A5FA;
+}
+.badge-platform.linkedin {
+    background: #1E3A5F;
+    color: #60A5FA;
+}
+
+/* ===== Stats Box ===== */
+.stat-box {
+    background: #111827;
+    border-radius: 10px;
+    padding: 12px 16px;
+    border-left: 3px solid #6366F1;
+}
+.stat-box .stat-number {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+}
+.stat-box .stat-label {
+    font-size: 0.7rem;
+    color: #9CA3AF;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    .main-content {
+        margin-left: 0;
+        padding: 16px;
+    }
+    .app-header {
+        padding: 10px 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    .glass-card {
+        padding: 16px;
+    }
+    .table-custom thead th {
+        font-size: 0.6rem;
+        padding: 8px 6px;
+    }
+    .table-custom tbody td {
+        font-size: 0.75rem;
+        padding: 8px 6px;
+    }
+    .stat-box .stat-number {
+        font-size: 1rem;
+    }
+    .stat-box .stat-label {
+        font-size: 0.6rem;
+    }
+}
