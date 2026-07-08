@@ -298,6 +298,17 @@
         let isLoginMode = true;
 
         // =============================================
+        // Check if user is already logged in
+        // =============================================
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkSession();
+
+        // =============================================
         // Toggle Password Visibility
         // =============================================
         togglePasswordBtn.addEventListener('click', function() {
@@ -327,7 +338,6 @@
                 btnText.textContent = 'Create Account';
                 document.querySelector('.auth-brand p').textContent = 'Start your free trial';
             }
-            // Clear messages
             errorMsg.classList.remove('show');
             successMsg.classList.remove('show');
         });
@@ -360,17 +370,6 @@
                 btnText.textContent = isLoginMode ? 'Sign In' : 'Create Account';
             }
         }
-
-        // =============================================
-        // Check if user is already logged in
-        // =============================================
-        async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                window.location.href = 'index.html';
-            }
-        }
-        checkSession();
 
         // =============================================
         // Handle Form Submit
@@ -436,7 +435,6 @@
                     if (error) {
                         if (error.message.includes('User already registered')) {
                             showError('This email is already registered. Please sign in instead.');
-                            // Auto switch to login mode after 2 seconds
                             setTimeout(() => {
                                 toggleMode.click();
                             }, 2000);
@@ -459,7 +457,6 @@
 
                         showSuccess('Account created successfully! Please check your email to confirm your account.');
                         setLoading(false);
-                        // Auto switch to login after 3 seconds
                         setTimeout(() => {
                             if (!isLoginMode) {
                                 toggleMode.click();
@@ -480,7 +477,7 @@
         });
 
         // =============================================
-        // Auto-login after email confirmation (optional)
+        // Auto-login after email confirmation
         // =============================================
         async function handleEmailConfirmation() {
             const hash = window.location.hash;
@@ -509,7 +506,7 @@
             }
         });
 
-        console.log('🔐 Auth system ready');
+        console.log('🔐 Login page ready');
     </script>
 
 </body>

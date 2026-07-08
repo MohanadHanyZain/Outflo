@@ -154,7 +154,40 @@
     <!-- Google Maps Specific -->
     <script src="gmaps.js"></script>
 
+    <script src="auth-check.js"></script>
+
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        // ===== Initialize Auth =====
+        Auth.initAuth().then(userData => {
+            if (!userData) return;
+            console.log('✅ Authenticated:', userData.user.email);
+        });
+
+        // ===== Sidebar toggle =====
+        const toggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('mainSidebar');
+        const main = document.getElementById('mainContent');
+        if (toggle && sidebar && main) {
+            toggle.addEventListener('click', function() {
+                if (window.innerWidth <= 992) {
+                    sidebar.classList.toggle('open');
+                } else {
+                    sidebar.classList.toggle('collapsed');
+                    main.classList.toggle('expanded');
+                }
+            });
+            window.addEventListener('resize', function() {
+                if (window.innerWidth <= 992) {
+                    sidebar.classList.remove('collapsed');
+                    main.classList.remove('expanded');
+                } else {
+                    sidebar.classList.remove('open');
+                }
+            });
+        }
+    });
+        
         document.addEventListener('DOMContentLoaded', function() {
             const toggle = document.getElementById('sidebarToggle');
             const sidebar = document.getElementById('mainSidebar');
