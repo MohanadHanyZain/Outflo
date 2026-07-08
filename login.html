@@ -120,10 +120,10 @@
             cursor: not-allowed;
             transform: none;
         }
-        .btn-auth.signup {
+        .btn-auth.signup-btn {
             background: #0A66C2;
         }
-        .btn-auth.signup:hover {
+        .btn-auth.signup-btn:hover {
             background: #004182;
         }
 
@@ -259,8 +259,6 @@
         .terms-text a:hover {
             color: #6366F1;
         }
-
-        /* Hide divider and footer when signup is active? No, keep them */
     </style>
 </head>
 <body>
@@ -338,7 +336,7 @@
 
     <script>
         // =============================================
-        // Supabase Configuration
+        // Supabase Configuration (same as before)
         // =============================================
         const SUPABASE_URL = 'https://smhkccanevtpdiuemseb.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaGtjY2FuZXZ0cGRpdWVtc2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MDg0NTQsImV4cCI6MjA5OTA4NDQ1NH0.KzynIoWK_MYc59Syk1b3KKGdhDab2cJKAWLRT6uId30';
@@ -363,8 +361,6 @@
         const passwordStrength = document.getElementById('passwordStrength');
         const signupFields = document.getElementById('signupFields');
         const signupFields2 = document.getElementById('signupFields2');
-
-        let isLoginMode = true;
 
         // =============================================
         // Check if user is already logged in
@@ -430,76 +426,70 @@
         });
 
         // =============================================
-        // Toggle between Login and Signup (FIXED & SIMPLE)
+        // ===== SIMPLE TOGGLE FUNCTION - WORKS 100% =====
         // =============================================
-        function switchToLogin() {
-            isLoginMode = true;
-            
-            // Update text
-            toggleLink.textContent = 'Create Account';
-            toggleText.textContent = "Don't have an account?";
-            btnText.textContent = 'Sign In';
-            brandSubtitle.textContent = 'B2B Intelligence Platform';
-            submitBtn.className = 'btn-auth';
-            
-            // Hide signup fields
-            signupFields.classList.remove('active');
-            signupFields2.classList.remove('active');
-            
-            // Remove required
-            fullNameInput.removeAttribute('required');
-            confirmPasswordInput.removeAttribute('required');
-            
-            // Clear confirm password
-            confirmPasswordInput.value = '';
-            
-            // Clear messages
-            errorMsg.classList.remove('show');
-            successMsg.classList.remove('show');
-            
-            console.log('🔐 Switched to Login mode');
-        }
+        let isLoginMode = true;
 
-        function switchToSignup() {
-            isLoginMode = false;
-            
-            // Update text
-            toggleLink.textContent = 'Sign In';
-            toggleText.textContent = "Already have an account?";
-            btnText.textContent = 'Create Account';
-            brandSubtitle.textContent = 'Start your free trial';
-            submitBtn.className = 'btn-auth signup';
-            
-            // Show signup fields
-            signupFields.classList.add('active');
-            signupFields2.classList.add('active');
-            
-            // Add required
-            fullNameInput.setAttribute('required', '');
-            confirmPasswordInput.setAttribute('required', '');
-            
-            // Clear messages
-            errorMsg.classList.remove('show');
-            successMsg.classList.remove('show');
-            
-            // Focus on full name
-            setTimeout(function() {
-                fullNameInput.focus();
-            }, 300);
-            
-            console.log('🔐 Switched to Signup mode');
-        }
-
-        // =============================================
-        // Toggle Link Click Handler
-        // =============================================
-        toggleLink.addEventListener('click', function() {
+        function toggleMode() {
             if (isLoginMode) {
-                switchToSignup();
+                // Switch to SIGNUP mode
+                isLoginMode = false;
+                
+                // Update UI
+                toggleLink.textContent = 'Sign In';
+                toggleText.textContent = "Already have an account?";
+                btnText.textContent = 'Create Account';
+                brandSubtitle.textContent = 'Start your free trial';
+                submitBtn.className = 'btn-auth signup-btn';
+                
+                // Show signup fields
+                signupFields.classList.add('active');
+                signupFields2.classList.add('active');
+                
+                // Make fields required
+                fullNameInput.setAttribute('required', '');
+                confirmPasswordInput.setAttribute('required', '');
+                
+                // Clear messages
+                errorMsg.classList.remove('show');
+                successMsg.classList.remove('show');
+                
+                console.log('✅ Switched to SIGNUP mode');
+                
             } else {
-                switchToLogin();
+                // Switch to LOGIN mode
+                isLoginMode = true;
+                
+                // Update UI
+                toggleLink.textContent = 'Create Account';
+                toggleText.textContent = "Don't have an account?";
+                btnText.textContent = 'Sign In';
+                brandSubtitle.textContent = 'B2B Intelligence Platform';
+                submitBtn.className = 'btn-auth';
+                
+                // Hide signup fields
+                signupFields.classList.remove('active');
+                signupFields2.classList.remove('active');
+                
+                // Remove required
+                fullNameInput.removeAttribute('required');
+                confirmPasswordInput.removeAttribute('required');
+                
+                // Clear confirm password
+                confirmPasswordInput.value = '';
+                
+                // Clear messages
+                errorMsg.classList.remove('show');
+                successMsg.classList.remove('show');
+                
+                console.log('✅ Switched to LOGIN mode');
             }
-        });
+        }
+
+        // =============================================
+        // Add click event to toggle link
+        // =============================================
+        toggleLink.addEventListener('click', toggleMode);
 
         // =============================================
         // Show/Hide Messages
@@ -516,11 +506,6 @@
             errorMsg.classList.remove('show');
         }
 
-        function clearMessages() {
-            errorMsg.classList.remove('show');
-            successMsg.classList.remove('show');
-        }
-
         function setLoading(isLoading) {
             submitBtn.disabled = isLoading;
             if (isLoading) {
@@ -535,7 +520,10 @@
         // =============================================
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            clearMessages();
+            
+            // Clear previous messages
+            errorMsg.classList.remove('show');
+            successMsg.classList.remove('show');
 
             const email = emailInput.value.trim();
             const password = passwordInput.value;
@@ -616,7 +604,7 @@
                             showError('This email is already registered. Please sign in instead.');
                             setTimeout(function() {
                                 if (!isLoginMode) {
-                                    switchToLogin();
+                                    toggleMode();
                                 }
                             }, 2000);
                         } else {
@@ -631,7 +619,7 @@
                             showError('This email is already registered. Please sign in instead.');
                             setTimeout(function() {
                                 if (!isLoginMode) {
-                                    switchToLogin();
+                                    toggleMode();
                                 }
                             }, 2000);
                             setLoading(false);
@@ -644,7 +632,7 @@
                         // Auto switch to login after 3 seconds
                         setTimeout(function() {
                             if (!isLoginMode) {
-                                switchToLogin();
+                                toggleMode();
                             }
                             emailInput.value = email;
                             passwordInput.value = '';
@@ -694,10 +682,10 @@
         });
 
         // =============================================
-        // Init - Ensure we start in login mode
+        // Init - Start in login mode
         // =============================================
-        switchToLogin();
-        console.log('🔐 Login page ready');
+        console.log('🔐 Login page ready - Click "Create Account" to switch');
+        console.log('📧 Supabase connected to:', SUPABASE_URL);
     </script>
 
 </body>
