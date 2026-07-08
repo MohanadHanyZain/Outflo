@@ -16,12 +16,10 @@ async function requireAuth() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     
     if (!session) {
-        // User is not logged in - redirect to login page
         window.location.href = 'login.html';
         return false;
     }
     
-    // User is logged in - return user data
     return {
         user: session.user,
         session: session
@@ -37,6 +35,98 @@ async function getCurrentUser() {
 }
 
 // =============================================
+// Get user profile from database
+// =============================================
+async function getUserProfile(userId) {
+    const { data, error } = await supabaseClient
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+    
+    if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+    }
+    return data;
+}
+
+// =============================================
+// Save lead to database
+// =============================================
+async function saveLead(userId, platform, searchQuery, location, resultsData) {
+    const { data, error } = await supabaseClient
+        .from('leads')
+        .insert({
+            user_id: userId,
+            platform: platform,
+            search_query: searchQuery,
+            location: location || null,
+            results_count: resultsData ? resultsData.length : 0,
+            data: resultsData || [],
+            status: resultsData && resultsData.length > 0 ? 'ready' : 'pending'
+        })
+        .select()
+        .single();
+    
+    if (error) {
+        console.error('Error saving lead:', error);
+        return null;
+    }
+    return data;
+}
+
+// =============================================
+// Get all leads for a user
+// =============================================
+async function getUserLeads(userId) {
+    const { data, error } = await supabaseClient
+        .from('leads')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+    
+    if (error) {
+        console.error('Error fetching leads:', error);
+        return [];
+    }
+    return data;
+}
+
+// =============================================
+// Get lead statistics for a user
+// =============================================
+async function getUserLeadStats(userId) {
+    const { data, error } = await supabaseClient
+        .from('leads')
+        .select('platform, results_count, status')
+        .eq('user_id', userId);
+    
+    if (error) {
+        console.error('Error fetching lead stats:', error);
+        return { total: 0, google: 0, linkedin: 0, pending: 0, ready: 0 };
+    }
+    
+    const stats = {
+        total: 0,
+        google: 0,
+        linkedin: 0,
+        pending: 0,
+        ready: 0
+    };
+    
+    data.forEach(lead => {
+        stats.total += lead.results_count || 0;
+        if (lead.platform === 'google') stats.google += lead.results_count || 0;
+        if (lead.platform === 'linkedin') stats.linkedin += lead.results_count || 0;
+        if (lead.status === 'pending') stats.pending++;
+        if (lead.status === 'ready') stats.ready++;
+    });
+    
+    return stats;
+}
+
+// =============================================
 // Logout function
 // =============================================
 async function logoutUser() {
@@ -45,11 +135,10 @@ async function logoutUser() {
 }
 
 // =============================================
-// Listen for auth changes (automatic redirect on logout)
+// Listen for auth changes
 // =============================================
 supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
-        // Redirect to login when user logs out
         if (!window.location.pathname.includes('login.html')) {
             window.location.href = 'login.html';
         }
@@ -71,6 +160,7 @@ function updateUserDisplay(user) {
     }
     
     if (logoutBtn) {
+        logoutBtn.removeEventListener('click', logoutUser);
         logoutBtn.addEventListener('click', logoutUser);
     }
 }
@@ -82,18 +172,37 @@ async function initAuth() {
     const userData = await requireAuth();
     if (userData) {
         updateUserDisplay(userData.user);
+        // Also get profile from DB
+        const profile = await getUserProfile(userData.user.id);
+        return { ...userData, profile };
     }
-    return userData;
+    return null;
 }
 
+// =============================================
+// Dashboard functions
+// =============================================
+async function loadDashboardStats(userId) {
+    const stats = await getUserLeadStats(userId);
+    const leads = await getUserLeads(userId);
+    return { stats, leads };
+}
+
+// =============================================
 // Export for use in other files
+// =============================================
 window.Auth = {
     requireAuth,
     getCurrentUser,
+    getUserProfile,
+    saveLead,
+    getUserLeads,
+    getUserLeadStats,
+    loadDashboardStats,
     logoutUser,
     updateUserDisplay,
     initAuth,
     supabase: supabaseClient
 };
 
-console.log('🔐 Auth system initialized');
+console.log('🔐 Auth system initialized with database support');

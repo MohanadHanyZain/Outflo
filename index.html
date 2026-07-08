@@ -21,24 +21,110 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 80px 20px;
+            padding: 60px 20px;
             text-align: center;
         }
         .dashboard-empty i {
-            font-size: 4rem;
+            font-size: 3.5rem;
             color: #2D3748;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         .dashboard-empty h5 {
             color: #E5E7EB;
             font-weight: 600;
+            margin-bottom: 8px;
         }
         .dashboard-empty p {
             color: #6B7280;
             max-width: 400px;
+            margin-bottom: 16px;
         }
-        .dashboard-empty .btn-primary-custom {
-            margin-top: 16px;
+        .stat-box {
+            background: #111827;
+            border-radius: 10px;
+            padding: 16px 20px;
+            border-left: 3px solid #6366F1;
+        }
+        .stat-box .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+        .stat-box .stat-label {
+            font-size: 0.7rem;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-box .stat-sub {
+            font-size: 0.6rem;
+            color: #6B7280;
+        }
+        .lead-item {
+            background: #1A202C;
+            border: 1px solid #2D3748;
+            border-radius: 8px;
+            padding: 12px 16px;
+            transition: all 0.2s ease;
+        }
+        .lead-item:hover {
+            border-color: #4F46E5;
+        }
+        .lead-item .lead-platform {
+            font-size: 0.65rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+            background: #1E3A5F;
+            color: #60A5FA;
+        }
+        .lead-item .lead-platform.linkedin {
+            background: #1E3A5F;
+            color: #60A5FA;
+        }
+        .lead-item .lead-status {
+            font-size: 0.65rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+        .lead-item .lead-status.ready {
+            background: #064E3B;
+            color: #34D399;
+        }
+        .lead-item .lead-status.pending {
+            background: #78350F;
+            color: #FBBF24;
+        }
+        .lead-item .lead-status.processing {
+            background: #1E3A5F;
+            color: #60A5FA;
+        }
+        .lead-item .lead-status.failed {
+            background: #3B1F2E;
+            color: #F472B6;
+        }
+        .lead-results-grid {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .lead-results-grid::-webkit-scrollbar {
+            width: 4px;
+        }
+        .lead-results-grid::-webkit-scrollbar-thumb {
+            background: #4F46E5;
+            border-radius: 10px;
+        }
+        .btn-download-lead {
+            background: transparent;
+            border: 1px solid #2D3748;
+            border-radius: 4px;
+            color: #9CA3AF;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            transition: all 0.2s ease;
+        }
+        .btn-download-lead:hover {
+            border-color: #4F46E5;
+            color: white;
         }
     </style>
 </head>
@@ -93,17 +179,35 @@
 
         <h1 class="h4 fw-bold text-light mb-4">Dashboard</h1>
 
-        <!-- Stats Cards (Only Total Leads) -->
-        <div class="row g-3 mb-4">
-            <div class="col-12 col-md-4 col-lg-3">
+        <!-- Stats Cards -->
+        <div class="row g-3 mb-4" id="statsRow">
+            <div class="col-6 col-md-3">
                 <div class="stat-box">
-                    <div class="stat-number" id="dashTotalLeads">0</div>
+                    <div class="stat-number" id="statTotal">0</div>
                     <div class="stat-label">Total Leads</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-box" style="border-left-color: #60A5FA;">
+                    <div class="stat-number" id="statGoogle">0</div>
+                    <div class="stat-label"><i class="fas fa-map-pin me-1" style="color:#60A5FA;"></i> Google Maps</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-box" style="border-left-color: #0A66C2;">
+                    <div class="stat-number" id="statLinkedin">0</div>
+                    <div class="stat-label"><i class="fab fa-linkedin me-1" style="color:#0A66C2;"></i> LinkedIn</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-box" style="border-left-color: #34D399;">
+                    <div class="stat-number" id="statReady">0</div>
+                    <div class="stat-label"><i class="fas fa-check-circle me-1" style="color:#34D399;"></i> Ready</div>
                 </div>
             </div>
         </div>
 
-        <!-- Filters Section -->
+        <!-- Filters -->
         <div class="glass-card mb-4">
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
@@ -115,11 +219,13 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label fw-semibold text-light small text-uppercase">Source</label>
-                    <select class="form-control form-control-custom" id="filterSource">
-                        <option value="all">All sources</option>
-                        <option value="google">Google Maps</option>
-                        <option value="linkedin">LinkedIn</option>
+                    <label class="form-label fw-semibold text-light small text-uppercase">Status</label>
+                    <select class="form-control form-control-custom" id="filterStatus">
+                        <option value="all">All status</option>
+                        <option value="ready">Ready</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="failed">Failed</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -127,47 +233,27 @@
                     <input type="text" class="form-control form-control-custom" id="filterSearch" placeholder="Search..." />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label fw-semibold text-light small text-uppercase">Date</label>
-                    <select class="form-control form-control-custom" id="filterDate">
-                        <option value="any">Any time</option>
-                        <option value="today">Today</option>
-                        <option value="week">This week</option>
-                        <option value="month">This month</option>
-                    </select>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-12 d-flex gap-2 flex-wrap">
-                    <button class="btn btn-primary-custom" id="filterSearchBtn">
-                        <i class="fas fa-search me-1"></i> Search
-                    </button>
-                    <button class="btn btn-outline-custom" id="filterClearBtn">
-                        <i class="fas fa-undo me-1"></i> Clear
-                    </button>
-                    <button class="btn btn-outline-custom" id="exportCsvBtn">
-                        <i class="fas fa-file-csv me-1"></i> Export CSV
-                    </button>
-                    <button class="btn btn-outline-custom" id="exportXlsBtn">
-                        <i class="fas fa-file-excel me-1"></i> Export XLS
-                    </button>
+                    <label class="form-label fw-semibold text-light small text-uppercase">Actions</label>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary-custom w-50" id="filterSearchBtn">
+                            <i class="fas fa-search me-1"></i> Search
+                        </button>
+                        <button class="btn btn-outline-custom w-50" id="filterClearBtn">
+                            <i class="fas fa-undo me-1"></i> Clear
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Empty Dashboard State -->
+        <!-- Results List -->
         <div class="glass-card p-0 overflow-hidden">
-            <div class="dashboard-empty">
-                <i class="fas fa-inbox"></i>
-                <h5>No Data Collected Yet</h5>
-                <p>Run a scraper from <strong>Google Maps</strong> or <strong>LinkedIn</strong> to start gathering leads. All extracted data will appear in the respective platform pages.</p>
-                <div class="d-flex gap-3">
-                    <a href="gmaps.html" class="btn btn-primary-custom">
-                        <i class="fas fa-map-pin me-2"></i> Go to Google Maps
-                    </a>
-                    <a href="linkedin.html" class="btn btn-primary-custom" style="background: #0A66C2;">
-                        <i class="fab fa-linkedin me-2"></i> Go to LinkedIn
-                    </a>
-                </div>
+            <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-light mb-0"><i class="fas fa-list me-2 text-primary"></i>My Extractions</h5>
+                <span class="text-secondary small" id="leadCount">0 records</span>
+            </div>
+            <div class="lead-results-grid" id="leadsContainer">
+                <!-- Dynamic content -->
             </div>
         </div>
 
@@ -184,16 +270,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ===== Initialize Auth =====
-            Auth.initAuth().then(userData => {
-                if (!userData) return;
-                console.log('✅ Authenticated:', userData.user.email);
-                
-                // Update total leads (example)
-                document.getElementById('dashTotalLeads').innerText = '0';
-            });
-
-            // ===== Sidebar toggle =====
+            // =============================================
+            // Sidebar toggle
+            // =============================================
             const toggle = document.getElementById('sidebarToggle');
             const sidebar = document.getElementById('mainSidebar');
             const main = document.getElementById('mainContent');
@@ -216,22 +295,183 @@
                 });
             }
 
-            // ===== Filter buttons =====
+            // =============================================
+            // Dashboard Data Loading
+            // =============================================
+            let currentUser = null;
+            let allLeads = [];
+
+            async function loadDashboard() {
+                const userData = await Auth.initAuth();
+                if (!userData) return;
+                
+                currentUser = userData.user;
+                console.log('✅ Authenticated:', currentUser.email);
+                
+                // Load stats and leads
+                const { stats, leads } = await Auth.loadDashboardStats(currentUser.id);
+                allLeads = leads;
+                
+                // Update stats
+                document.getElementById('statTotal').textContent = stats.total;
+                document.getElementById('statGoogle').textContent = stats.google;
+                document.getElementById('statLinkedin').textContent = stats.linkedin;
+                document.getElementById('statReady').textContent = stats.ready;
+                
+                // Render leads
+                renderLeads(leads);
+            }
+
+            function renderLeads(leads) {
+                const container = document.getElementById('leadsContainer');
+                const count = document.getElementById('leadCount');
+                
+                if (!leads || leads.length === 0) {
+                    container.innerHTML = `
+                        <div class="dashboard-empty">
+                            <i class="fas fa-inbox"></i>
+                            <h5>No Data Collected Yet</h5>
+                            <p>Run a scraper from <strong>Google Maps</strong> or <strong>LinkedIn</strong> to start gathering leads.</p>
+                            <div class="d-flex gap-3">
+                                <a href="gmaps.html" class="btn btn-primary-custom">
+                                    <i class="fas fa-map-pin me-2"></i> Go to Google Maps
+                                </a>
+                                <a href="linkedin.html" class="btn btn-primary-custom" style="background: #0A66C2;">
+                                    <i class="fab fa-linkedin me-2"></i> Go to LinkedIn
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    count.textContent = '0 records';
+                    return;
+                }
+
+                let html = '';
+                leads.forEach(lead => {
+                    const platformClass = lead.platform === 'google' ? '' : 'linkedin';
+                    const statusClass = lead.status || 'pending';
+                    const dataCount = lead.results_count || (lead.data ? lead.data.length : 0);
+                    const date = new Date(lead.created_at);
+                    const dateStr = date.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    html += `
+                        <div class="lead-item d-flex flex-wrap align-items-center justify-content-between gap-2" style="border-bottom: 1px solid #2D3748; border-radius: 0;">
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <span class="lead-platform ${platformClass}">${lead.platform === 'google' ? '🗺️ Google' : '🔗 LinkedIn'}</span>
+                                <span class="text-light small fw-semibold">${lead.search_query || 'N/A'}</span>
+                                ${lead.location ? `<span class="text-secondary small">📍 ${lead.location}</span>` : ''}
+                                <span class="text-secondary small">${dateStr}</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <span class="text-light small fw-semibold">${dataCount} leads</span>
+                                <span class="lead-status ${statusClass}">${statusClass.toUpperCase()}</span>
+                                ${dataCount > 0 ? `
+                                    <button class="btn-download-lead" onclick="downloadLeadData('${lead.id}')">
+                                        <i class="fas fa-file-csv"></i> CSV
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+                count.textContent = leads.length + ' records';
+            }
+
+            // =============================================
+            // Download lead data as CSV
+            // =============================================
+            window.downloadLeadData = async function(leadId) {
+                const lead = allLeads.find(l => l.id === leadId);
+                if (!lead || !lead.data || lead.data.length === 0) {
+                    alert('No data to download');
+                    return;
+                }
+
+                let headers, rows;
+                if (lead.platform === 'google') {
+                    headers = ['Name', 'Phone', 'Website', 'Address'];
+                    rows = lead.data.map(item => [
+                        item.name || item.title || '',
+                        item.phone || '',
+                        item.website || '',
+                        item.address || ''
+                    ]);
+                } else {
+                    headers = ['Full Name', 'Job Title', 'Email', 'Profile URL'];
+                    rows = lead.data.map(item => [
+                        item.fullName || item.name || '',
+                        item.headline || item.occupation || '',
+                        item.email || '',
+                        item.profileUrl || item.url || ''
+                    ]);
+                }
+
+                let csv = '\uFEFF' + headers.join(',') + '\n';
+                rows.forEach(row => {
+                    const escaped = row.map(cell => {
+                        if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"') || cell.includes('\n'))) {
+                            return `"${cell.replace(/"/g, '""')}"`;
+                        }
+                        return cell;
+                    });
+                    csv += escaped.join(',') + '\n';
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `leads_${lead.platform}_${new Date().toISOString().slice(0,10)}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            };
+
+            // =============================================
+            // Filters
+            // =============================================
             document.getElementById('filterSearchBtn').addEventListener('click', function() {
-                alert('Search functionality will be available after data collection.');
+                const platform = document.getElementById('filterPlatform').value;
+                const status = document.getElementById('filterStatus').value;
+                const search = document.getElementById('filterSearch').value.toLowerCase();
+
+                let filtered = allLeads;
+
+                if (platform !== 'all') {
+                    filtered = filtered.filter(l => l.platform === platform);
+                }
+                if (status !== 'all') {
+                    filtered = filtered.filter(l => (l.status || 'pending') === status);
+                }
+                if (search) {
+                    filtered = filtered.filter(l => 
+                        (l.search_query || '').toLowerCase().includes(search) ||
+                        (l.location || '').toLowerCase().includes(search)
+                    );
+                }
+
+                renderLeads(filtered);
             });
+
             document.getElementById('filterClearBtn').addEventListener('click', function() {
-                document.getElementById('filterSearch').value = '';
                 document.getElementById('filterPlatform').value = 'all';
-                document.getElementById('filterSource').value = 'all';
-                document.getElementById('filterDate').value = 'any';
+                document.getElementById('filterStatus').value = 'all';
+                document.getElementById('filterSearch').value = '';
+                renderLeads(allLeads);
             });
-            document.getElementById('exportCsvBtn').addEventListener('click', function() {
-                alert('CSV export will be available after data collection.');
-            });
-            document.getElementById('exportXlsBtn').addEventListener('click', function() {
-                alert('XLS export will be available after data collection.');
-            });
+
+            // =============================================
+            // Load dashboard
+            // =============================================
+            loadDashboard();
         });
     </script>
 
