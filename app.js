@@ -582,32 +582,33 @@
     // =============================================
     // ===== FIXED: LinkedIn Input with all possible parameters =====
     // =============================================
-    function prepareLinkedinInput() {
-        const linkedinJobEl = getEl('linkedinJob');
-        const linkedinCountryEl = getEl('linkedinCountry');
-        const job = linkedinJobEl ? linkedinJobEl.value.trim() : 'Marketing Manager';
-        const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
-        const max = getLeadCount();
-        
-        // Build search URL for LinkedIn people search
-        const encodedKeywords = encodeURIComponent(`${job} ${country}`);
-        const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodedKeywords}`;
-        
-        console.log('🔗 LinkedIn searchUrl:', searchUrl);
-        console.log('🔍 Job:', job, 'Country:', country);
-        
-        // Send ALL possible parameters that this actor might accept
-        return {
-            "searchUrl": searchUrl,
-            "searchQuery": `${job} ${country}`,
-            "keywords": job,
-            "location": country,
-            "profileScraperMode": "Full",
-            "maxItems": max,
-            "startPage": 1,
-            "endPage": 1  // Only first page for speed
-        };
-    }
+    // ===== استبدل دالة prepareLinkedinInput بالكامل =====
+function prepareLinkedinInput() {
+    const linkedinJobEl = getEl('linkedinJob');
+    const linkedinCountryEl = getEl('linkedinCountry');
+    const job = linkedinJobEl ? linkedinJobEl.value.trim() : 'Marketing Manager';
+    const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
+    const max = getLeadCount();
+
+    // بناء استعلام البحث (مثل: "Marketing Manager Egypt")
+    const searchQuery = `${job} ${country}`;
+
+    console.log('🔍 LinkedIn Search Query:', searchQuery);
+
+    // مدخلات Actor الرسمي للبحث عن الأشخاص
+    return {
+        "search": searchQuery,
+        "maxResults": max,
+        "maxPages": 1,          // صفحة واحدة فقط للسرعة
+        "useProxy": true,
+        "includeUnavailable": false,
+        "saveHtml": false,
+        "saveImages": false
+    };
+}
+
+// ===== تحديث دالة runActor لتستقبل الـ Actor ID الجديد =====
+// (لا حاجة لتغييرها، فقط استخدم المعرف الجديد في linkedin.js)
 
     // ===== Expose =====
     window.Outflo = {
