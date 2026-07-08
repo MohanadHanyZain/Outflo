@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (runGoogleBtn) {
         runGoogleBtn.addEventListener('click', function() {
-            console.log('🚀 RUNNING GOOGLE SCRAPER...');
+            console.log('🚀🚀🚀 RUNNING GOOGLE SCRAPER...');
             
             if (!window.Outflo) {
                 console.error('❌ Outflo not loaded');
@@ -16,10 +16,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const input = window.Outflo.prepareGoogleInput();
-            console.log('📦 Input:', input);
+            const count = window.Outflo.getLeadCount();
             
-            // استخدام الطريقة التي لا تعاني من CORS
-            window.Outflo.runActorDirect('AabCualFIriz3X6Fs', input, 'google', window.Outflo.getLeadCount());
+            console.log('📦 Input:', input);
+            console.log('🎯 Target count:', count);
+            
+            window.Outflo.runActor('AabCualFIriz3X6Fs', input, 'google', count);
         });
     }
 
@@ -32,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (debugBtn) {
         debugBtn.addEventListener('click', function() {
             console.log('🔍 Google Maps Debug');
+            console.log('Outflo loaded:', !!window.Outflo);
             if (window.Outflo) {
                 console.log('Items:', window.Outflo.currentItems ? window.Outflo.currentItems.length : 0);
             }

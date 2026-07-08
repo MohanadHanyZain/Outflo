@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (runLinkedinBtn) {
         runLinkedinBtn.addEventListener('click', function() {
-            console.log('🚀 RUNNING LINKEDIN SCRAPER...');
+            console.log('🚀🚀🚀 RUNNING LINKEDIN SCRAPER...');
             
             if (!window.Outflo) {
                 console.error('❌ Outflo not loaded');
@@ -16,10 +16,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const input = window.Outflo.prepareLinkedinInput();
-            console.log('📦 Input:', input);
+            const count = window.Outflo.getLeadCount();
             
-            // استخدام الطريقة التي لا تعاني من CORS
-            window.Outflo.runActorDirect('M2FMdjRVeF1HPGFcc', input, 'linkedin', window.Outflo.getLeadCount());
+            console.log('📦 Input:', input);
+            console.log('🎯 Target count:', count);
+            
+            window.Outflo.runActor('M2FMdjRVeF1HPGFcc', input, 'linkedin', count);
         });
     }
 
@@ -32,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (debugBtn) {
         debugBtn.addEventListener('click', function() {
             console.log('🔍 LinkedIn Debug');
+            console.log('Outflo loaded:', !!window.Outflo);
             if (window.Outflo) {
                 console.log('Items:', window.Outflo.currentItems ? window.Outflo.currentItems.length : 0);
             }
