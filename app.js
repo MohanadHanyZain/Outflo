@@ -1,4 +1,4 @@
-// ===== CORE LOGIC - No Email Prediction =====
+// ===== CORE LOGIC - Updated LinkedIn Input =====
 
 (function() {
     "use strict";
@@ -47,7 +47,6 @@
     // ===== EMAIL EXTRACTOR - NO PREDICTION =====
     // =============================================
     function extractEmail(item) {
-        // Check direct email fields
         const emailFields = ['email', 'emailAddress', 'contactInfo.email', 'primaryEmail', 'workEmail', 'contactEmail'];
         for (let field of emailFields) {
             const val = field.includes('.') ? field.split('.').reduce((o, k) => o?.[k], item) : item[field];
@@ -56,7 +55,6 @@
             }
         }
 
-        // Check if email exists in any text field using regex
         const textFields = ['headline', 'description', 'about', 'summary', 'bio', 'occupation', 'jobTitle', 'title'];
         for (let field of textFields) {
             if (item[field] && typeof item[field] === 'string') {
@@ -68,14 +66,11 @@
             }
         }
 
-        // Check entire object as last resort
         const fullText = JSON.stringify(item);
         const globalRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
         const matches = fullText.match(globalRegex);
         if (matches && matches.length > 0) {
-            // Remove duplicates
             const unique = [...new Set(matches)];
-            // Filter out common placeholder emails
             const validEmails = unique.filter(email => 
                 !email.includes('example.com') && 
                 !email.includes('test.com') &&
@@ -86,7 +81,6 @@
             }
         }
 
-        // No email found - return Not Available
         return { email: 'Not Available', source: 'Not Found' };
     }
 
@@ -119,7 +113,6 @@
             ].filter(Boolean).map(s => s.toLowerCase()).join(' ');
             return search.some(t => text.includes(t)) || (kw.length > 2 && text.includes(kw));
         });
-        // Sort: items with real emails first
         return filtered.sort((a, b) => {
             const ea = extractEmail(a);
             const eb = extractEmail(b);
@@ -199,7 +192,6 @@
         emailStats = { found: 0, predicted: 0, fallback: 0 };
         let display = items || [];
 
-        // Apply LinkedIn filter if needed
         if (platform === 'linkedin') {
             const linkedinJobInput = getEl('linkedinJob');
             const kw = linkedinJobInput ? linkedinJobInput.value.trim() : '';
@@ -210,7 +202,6 @@
             }
         }
 
-        // Trim to target count
         if (targetCount && targetCount > 0 && display.length > targetCount) {
             display = display.slice(0, targetCount);
         }
@@ -235,7 +226,6 @@
             let cols = [];
             
             if (platform === 'google') {
-                // ===== GOOGLE MAPS =====
                 const name = item.name || item.title || 'Unknown';
                 const phone = item.phone || '—';
                 const website = item.website || '—';
@@ -255,13 +245,11 @@
                     `<span class="badge-platform google">Google Maps</span>`
                 ];
             } else {
-                // ===== LINKEDIN - NO PREDICTION =====
                 const fullName = item.fullName || item.name || item.firstName || 'Unknown';
                 const jobTitle = item.headline || item.occupation || item.jobTitle || '—';
                 const company = item.currentCompany || item.company || '—';
                 const location = item.location || '—';
                 
-                // Extract email without prediction
                 const emailRes = extractEmail(item);
                 let emailDisplay = emailRes.email;
                 let badgeClass = 'badge-email';
@@ -313,14 +301,13 @@
         if (platform === 'linkedin' && statsRow) {
             statsRow.style.display = 'flex';
             if (statFound) statFound.innerText = emailStats.found;
-            if (statPredicted) statPredicted.innerText = 0; // No predictions
+            if (statPredicted) statPredicted.innerText = 0;
             if (statFallback) statFallback.innerText = emailStats.fallback;
             if (statTotal) statTotal.innerText = total;
         } else if (statsRow) {
             statsRow.style.display = 'none';
         }
 
-        // Save to database
         if (display && display.length > 0) {
             console.log('💾 Triggering database save from renderTable...');
             saveToDatabase(display, platform);
@@ -563,7 +550,41 @@
         }
     }
 
-    // ===== Input preparers =====
+    // =============================================
+    // ===== PREPARE LINKEDIN INPUT (FIXED) =====
+    // =============================================
+    function prepareLinkedinInput() {
+        const linkedinJobEl = getEl('linkedinJob');
+        const linkedinCountryEl = getEl('linkedinCountry');
+        const job = linkedinJobEl ? linkedinJobEl.value.trim() : 'Marketing Manager';
+        const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
+        const max = getLeadCount();
+        
+        // Try different search formats
+        // Format 1: Simple query
+        const searchQuery1 = `${job} ${country}`;
+        // Format 2: With quotes for exact match
+        const searchQuery2 = `"${job}" "${country}"`;
+        // Format 3: LinkedIn search format
+        const searchQuery3 = `${job} in ${country}`;
+        
+        // Use the simple format which usually works best
+        const searchQuery = searchQuery1;
+        
+        console.log('🔍 LinkedIn Search Query:', searchQuery);
+        
+        return {
+            "searchQuery": searchQuery,
+            "profileScraperMode": "Full",
+            "maxItems": max,
+            "startPage": 1,
+            // Additional parameters to help with search
+            "location": country,
+            "keywords": job
+        };
+    }
+
+    // ===== PREPARE GOOGLE INPUT =====
     function prepareGoogleInput() {
         const googleKeywordEl = getEl('googleKeyword');
         const googleLocationEl = getEl('googleLocation');
@@ -599,19 +620,28 @@
         };
     }
 
-    function prepareLinkedinInput() {
-        const linkedinJobEl = getEl('linkedinJob');
-        const linkedinCountryEl = getEl('linkedinCountry');
-        const job = linkedinJobEl ? linkedinJobEl.value.trim() : 'Marketing Manager';
-        const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
-        const max = getLeadCount();
-        const searchQuery = `${job} in ${country}`;
-        return {
-            "searchQuery": searchQuery,
-            "profileScraperMode": "Full",
-            "maxItems": max,
-            "startPage": 1
-        };
+    // =============================================
+    // ===== TEST FUNCTION =====
+    // =============================================
+    async function testLinkedinSearch() {
+        console.log('🧪 Testing LinkedIn search...');
+        const input = prepareLinkedinInput();
+        console.log('📦 Test input:', input);
+        
+        try {
+            const url = `https://api.apify.com/v2/acts/M2FMdjRVeF1HPGFcc/runs?token=${API_TOKEN}`;
+            const resp = await fetch(url, {
+                method: 'POST',
+                mode: 'cors',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(input)
+            });
+            const result = await resp.json();
+            console.log('📊 Test result:', result);
+            return result;
+        } catch (err) {
+            console.error('❌ Test error:', err);
+        }
     }
 
     // ===== Expose =====
@@ -630,6 +660,7 @@
         runActor,
         prepareGoogleInput,
         prepareLinkedinInput,
+        testLinkedinSearch,
         saveToDatabase,
         currentItems,
         emailStats,
@@ -639,4 +670,5 @@
 
     console.log('🚀 Outflo Core Engine loaded - NO EMAIL PREDICTION');
     console.log('📧 Only real emails from Apify will be displayed');
+    console.log('🔍 LinkedIn search will use format: "Job Country"');
 })();
