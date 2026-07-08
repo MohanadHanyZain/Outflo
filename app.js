@@ -1,4 +1,4 @@
-// ===== CORE LOGIC - Enhanced with target count =====
+// ===== CORE LOGIC - Enhanced with database save =====
 
 (function() {
     "use strict";
@@ -32,9 +32,9 @@
     let currentPlatform = 'google';
     let filteredCount = 0;
     let emailStats = { found: 0, predicted: 0, fallback: 0 };
-    let targetCount = 20; // default
+    let targetCount = 20;
 
-    // ===== Get lead count (safe) =====
+    // ===== Get lead count =====
     function getLeadCount() {
         if (!leadCountInput) return 20;
         let val = parseInt(leadCountInput.value, 10);
@@ -43,7 +43,7 @@
         return val;
     }
 
-    // ===== Email Hunter (unchanged) =====
+    // ===== Email Hunter =====
     function huntEmail(item) {
         const direct = ['email', 'emailAddress', 'contactInfo.email', 'primaryEmail', 'workEmail', 'contactEmail'];
         for (let f of direct) {
@@ -110,7 +110,6 @@
             ].filter(Boolean).map(s=>s.toLowerCase()).join(' ');
             return search.some(t => text.includes(t)) || (kw.length>2 && text.includes(kw));
         });
-        // sort by email priority
         return filtered.sort((a,b) => {
             const ea = huntEmail(a), eb = huntEmail(b);
             const pri = e => e.source.includes('Found') || e.source.includes('Regex') ? 0 : e.source.includes('Predicted') ? 1 : 2;
@@ -118,8 +117,73 @@
         });
     }
 
-    // ===== Render Table with limit =====
-    function renderTable(items, platform, limit) {
+    // =============================================
+    // ===== SAVE TO DATABASE =====
+    // =============================================
+    async function saveToDatabase(items, platform) {
+        console.log('💾💾💾 SAVING TO DATABASE FROM APP.JS...');
+        console.log('📊 Platform:', platform);
+        console.log('📊 Items count:', items ? items.length : 0);
+
+        try {
+            // Check if Auth is available
+            if (typeof Auth === 'undefined' || !Auth.getCurrentUser) {
+                console.log('⚠️ Auth not loaded, skipping database save');
+                return false;
+            }
+
+            const user = await Auth.getCurrentUser();
+            if (!user) {
+                console.log('⚠️ No user logged in, skipping database save');
+                return false;
+            }
+
+            console.log('👤 User ID:', user.id);
+
+            // Get search query based on platform
+            let searchQuery = '';
+            let location = '';
+
+            if (platform === 'google') {
+                const googleKeyword = getEl('googleKeyword');
+                const googleLocation = getEl('googleLocation');
+                searchQuery = googleKeyword ? googleKeyword.value.trim() : 'restaurant';
+                location = googleLocation ? googleLocation.value.trim() : 'Dubai';
+            } else {
+                const linkedinJob = getEl('linkedinJob');
+                const linkedinCountry = getEl('linkedinCountry');
+                searchQuery = linkedinJob ? linkedinJob.value.trim() : 'Marketing Manager';
+                location = linkedinCountry ? linkedinCountry.value.trim() : 'Egypt';
+            }
+
+            console.log('🔍 Search:', searchQuery);
+            console.log('📍 Location:', location);
+
+            // Save using Auth.saveLead
+            const result = await Auth.saveLead(
+                user.id,
+                platform,
+                searchQuery,
+                location,
+                items || []
+            );
+
+            if (result) {
+                console.log('✅✅✅ DATA SAVED TO DATABASE SUCCESSFULLY!');
+                console.log('📝 Saved lead ID:', result[0]?.id || 'unknown');
+                return true;
+            } else {
+                console.error('❌ Failed to save data');
+                return false;
+            }
+        } catch (err) {
+            console.error('❌❌❌ Error saving to database:', err);
+            return false;
+        }
+    }
+
+    // ===== Render Table =====
+    function renderTable(items, platform) {
         if (!tableBody) return;
         tableBody.innerHTML = '';
         emailStats = { found:0, predicted:0, fallback:0 };
@@ -136,9 +200,9 @@
             }
         }
 
-        // Trim to target count (if specified)
-        if (limit && limit > 0 && display.length > limit) {
-            display = display.slice(0, limit);
+        // Trim to target count
+        if (targetCount && targetCount > 0 && display.length > targetCount) {
+            display = display.slice(0, targetCount);
         }
 
         if (!display || display.length === 0) {
@@ -149,7 +213,6 @@
             return;
         }
 
-        // Build rows
         let html = '';
         display.forEach((item, idx) => {
             let cols = [];
@@ -211,6 +274,14 @@
             if (statTotal) statTotal.innerText = total;
         } else if (statsRow) {
             statsRow.style.display = 'none';
+        }
+
+        // =============================================
+        // ===== SAVE TO DATABASE AFTER RENDER =====
+        // =============================================
+        if (display && display.length > 0) {
+            console.log('💾 Triggering database save from renderTable...');
+            saveToDatabase(display, platform);
         }
     }
 
@@ -311,7 +382,7 @@
         URL.revokeObjectURL(link.href);
     }
 
-    // ===== Run Actor with target count =====
+    // ===== Run Actor =====
     async function runActor(actorId, inputData, platform, targetCountParam) {
         targetCount = targetCountParam || getLeadCount();
         resetAllData();
@@ -387,9 +458,9 @@
                             console.log(`📊 Received ${items.length} items from dataset`);
                             if (!Array.isArray(items)) {
                                 console.warn('⚠️ Dataset response is not an array:', items);
-                                renderTable([], platform, targetCount);
+                                renderTable([], platform);
                             } else {
-                                renderTable(items, platform, targetCount);
+                                renderTable(items, platform);
                             }
                             const total = currentItems.length;
                             const summary = platform === 'linkedin' ? 
@@ -470,8 +541,7 @@
         const linkedinCountryEl = getEl('linkedinCountry');
         const job = linkedinJobEl ? linkedinJobEl.value.trim() : 'Marketing Manager';
         const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
-        // Fetch more than needed to compensate for filtering
-        const max = getLeadCount() * 3;  // triple the target
+        const max = getLeadCount() * 3;
         return {
             "searchQuery": `${job} in ${country}`,
             "profileScraperMode": "Full",
@@ -480,31 +550,9 @@
         };
     }
 
-    // ===== Expose to window =====
+    // ===== Expose =====
     window.Outflo = {
         API_TOKEN,
-        leadCountInput,
-        statusMsg,
-        progressBar,
-        resultCount,
-        tableBody,
-        dynamicHead,
-        downloadBtn,
-        debugBtn,
-        statusPulse,
-        statsRow,
-        statFound,
-        statPredicted,
-        statFallback,
-        statTotal,
-        currentDatasetId,
-        currentItems,
-        isPolling,
-        pollInterval,
-        currentPlatform,
-        filteredCount,
-        emailStats,
-        targetCount,
         getLeadCount,
         huntEmail,
         getProfileLink,
@@ -517,8 +565,13 @@
         downloadCsv,
         runActor,
         prepareGoogleInput,
-        prepareLinkedinInput
+        prepareLinkedinInput,
+        saveToDatabase,
+        currentItems,
+        emailStats,
+        currentPlatform,
+        targetCount
     };
 
-    console.log('🚀 Outflo Core Engine loaded (with target count enforcement)');
+    console.log('🚀 Outflo Core Engine loaded with database save');
 })();
