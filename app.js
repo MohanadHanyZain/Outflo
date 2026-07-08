@@ -1,4 +1,4 @@
-// ===== CORE LOGIC - Enhanced with better table display =====
+// ===== CORE LOGIC - Enhanced with database save =====
 
 (function() {
     "use strict";
@@ -126,6 +126,7 @@
         console.log('📊 Items count:', items ? items.length : 0);
 
         try {
+            // Check if Auth is available
             if (typeof Auth === 'undefined' || !Auth.getCurrentUser) {
                 console.log('⚠️ Auth not loaded, skipping database save');
                 return false;
@@ -139,6 +140,7 @@
 
             console.log('👤 User ID:', user.id);
 
+            // Get search query based on platform
             let searchQuery = '';
             let location = '';
 
@@ -157,6 +159,7 @@
             console.log('🔍 Search:', searchQuery);
             console.log('📍 Location:', location);
 
+            // Save using Auth.saveLead
             const result = await Auth.saveLead(
                 user.id,
                 platform,
@@ -179,9 +182,7 @@
         }
     }
 
-    // =============================================
-    // ===== RENDER TABLE - ORGANIZED =====
-    // =============================================
+    // ===== Render Table =====
     function renderTable(items, platform) {
         if (!tableBody) return;
         tableBody.innerHTML = '';
@@ -205,14 +206,7 @@
         }
 
         if (!display || display.length === 0) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-secondary py-4">
-                        <i class="fas fa-inbox me-2" style="opacity:0.3;"></i> 
-                        No leads to display
-                    </td>
-                </tr>
-            `;
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-secondary py-4">No leads to display</td></tr>`;
             if (resultCount) resultCount.innerText = '0 leads';
             if (downloadBtn) downloadBtn.disabled = true;
             currentItems = [];
@@ -222,35 +216,20 @@
         let html = '';
         display.forEach((item, idx) => {
             let cols = [];
-            
             if (platform === 'google') {
-                // ===== GOOGLE MAPS - Organized =====
-                const name = item.name || item.title || 'Unknown';
-                const phone = item.phone || '—';
-                const website = item.website || '—';
-                const address = item.address || '—';
-                const rating = item.rating || '—';
-                const reviews = item.reviews || '—';
-                
+                let name = item.name || item.title || 'Unknown';
+                let phone = item.phone || '-';
+                let website = item.website || item.address || '-';
                 cols = [
-                    `<div class="fw-semibold text-light">${name}</div>
-                     <div class="text-secondary small">${address}</div>`,
-                    `<div class="text-light">${phone}</div>`,
-                    website !== '—' ? `<a href="${website}" target="_blank" class="text-primary text-decoration-none small">${website.replace(/^https?:\/\//, '').slice(0, 30)}${website.length > 30 ? '…' : ''}</a>` : '—',
-                    `<div class="text-center">
-                        <span class="badge bg-primary bg-opacity-10 text-primary small">${rating}</span>
-                        <div class="text-secondary small">${reviews} reviews</div>
-                     </div>`,
-                    `<span class="badge-platform google">Google Maps</span>`
+                    name,
+                    phone ? `<span class="badge-phone">${phone}</span>` : '-',
+                    website,
+                    '<span class="badge-platform google">Google</span>'
                 ];
             } else {
-                // ===== LINKEDIN - Organized =====
-                const fullName = item.fullName || item.name || item.firstName || 'Unknown';
-                const jobTitle = item.headline || item.occupation || item.jobTitle || '—';
-                const company = item.currentCompany || item.company || '—';
-                const location = item.location || '—';
+                let fullName = item.fullName || item.name || item.firstName || item.profileName || 'Unknown';
+                let jobTitle = item.headline || item.occupation || item.jobTitle || item.title || '-';
                 const emailRes = huntEmail(item);
-                
                 let emailDisplay = emailRes.email;
                 let badgeClass = 'badge-email';
                 if (emailRes.source.includes('Found') || emailRes.source.includes('Regex')) {
@@ -264,30 +243,18 @@
                     emailStats.fallback++;
                 }
                 const emailHtml = `<span class="${badgeClass}" title="${emailRes.source}">${emailDisplay}</span>`;
-                
-                const profileLink = getProfileLink(item);
-                const linkHtml = profileLink !== '#' ? 
-                    `<a href="${profileLink}" target="_blank" class="text-primary text-decoration-none small">
-                        <i class="fas fa-external-link-alt"></i> View Profile
-                     </a>` : '—';
-                
+                let profileLink = getProfileLink(item);
+                let linkHtml = profileLink !== '#' ? 
+                    `<a href="${profileLink}" target="_blank" class="text-primary text-decoration-none small"><i class="fas fa-external-link-alt"></i> view</a>` : '-';
                 cols = [
-                    `<div class="fw-semibold text-light">${fullName}</div>
-                     <div class="text-secondary small">${jobTitle}</div>`,
-                    `<div class="text-light">${company}</div>
-                     <div class="text-secondary small">${location}</div>`,
+                    fullName,
+                    jobTitle,
                     emailHtml,
                     linkHtml,
-                    `<span class="badge-platform linkedin">LinkedIn</span>`
+                    '<span class="badge-platform linkedin">LinkedIn</span>'
                 ];
             }
-            
-            html += `
-                <tr>
-                    <td class="text-secondary" style="width:40px;">${idx + 1}</td>
-                    ${cols.map(c => `<td>${c}</td>`).join('')}
-                </tr>
-            `;
+            html += `<tr><td>${idx+1}</td>${cols.map(c=>`<td>${c}</td>`).join('')}</tr>`;
         });
 
         tableBody.innerHTML = html;
@@ -309,7 +276,9 @@
             statsRow.style.display = 'none';
         }
 
-        // Save to database
+        // =============================================
+        // ===== SAVE TO DATABASE AFTER RENDER =====
+        // =============================================
         if (display && display.length > 0) {
             console.log('💾 Triggering database save from renderTable...');
             saveToDatabase(display, platform);
@@ -321,12 +290,12 @@
         if (!dynamicHead) return;
         let headers = [];
         if (platform === 'google') {
-            headers = ['#', 'Place / Address', 'Phone', 'Website', 'Rating', 'Source'];
+            headers = ['#', 'Name / Place', 'Phone', 'Website / Address', 'Source'];
         } else {
-            headers = ['#', 'Name / Title', 'Company / Location', 'Email', 'Profile', 'Source'];
+            headers = ['#', 'Full Name', 'Job Title', 'Email 🎯', 'Profile', 'Source'];
         }
         let html = '<tr>';
-        headers.forEach(h => html += `<th class="text-uppercase small fw-semibold" style="color:#9CA3AF;letter-spacing:0.5px;">${h}</th>`);
+        headers.forEach(h => html += `<th>${h}</th>`);
         html += '</tr>';
         dynamicHead.innerHTML = html;
     }
@@ -358,14 +327,7 @@
         if (downloadBtn) downloadBtn.disabled = true;
         if (statsRow) statsRow.style.display = 'none';
         if (tableBody) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-secondary py-4">
-                        <i class="fas fa-inbox me-2" style="opacity:0.3;"></i> 
-                        No leads yet. Run a scraper above.
-                    </td>
-                </tr>
-            `;
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-secondary py-4">No leads yet. Run a scraper above.</td></tr>`;
         }
         if (resultCount) resultCount.innerText = '0 leads';
         updateStatus('<i class="fas fa-circle-notch fa-spin me-2"></i> Awaiting action', 0, false);
@@ -379,25 +341,20 @@
         }
         let headers, rows;
         if (currentPlatform === 'google') {
-            headers = ['Name', 'Address', 'Phone', 'Website', 'Rating', 'Reviews', 'Source'];
+            headers = ['Name / Place', 'Phone', 'Website / Address', 'Source'];
             rows = currentItems.map(item => [
                 item.name || item.title || '',
-                item.address || '',
                 item.phone || '',
-                item.website || '',
-                item.rating || '',
-                item.reviews || '',
+                item.website || item.address || '',
                 'Google Maps'
             ]);
         } else {
-            headers = ['Full Name', 'Job Title', 'Company', 'Location', 'Email', 'Email Source', 'Profile URL', 'Source'];
+            headers = ['Full Name', 'Job Title', 'Target Email', 'Email Source', 'Profile URL', 'Source'];
             rows = currentItems.map(item => {
                 const e = huntEmail(item);
                 return [
                     item.fullName || item.name || item.firstName || '',
                     item.headline || item.occupation || item.jobTitle || '',
-                    item.currentCompany || item.company || '',
-                    item.location || '',
                     e.email,
                     e.source,
                     getProfileLink(item),
@@ -584,13 +541,9 @@
         const linkedinCountryEl = getEl('linkedinCountry');
         const job = linkedinJobEl ? linkedinJobEl.value.trim() : 'Marketing Manager';
         const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
-        const max = getLeadCount();
-        
-        // Build search query with job title and country
-        const searchQuery = `${job} in ${country}`;
-        
+        const max = getLeadCount() * 3;
         return {
-            "searchQuery": searchQuery,
+            "searchQuery": `${job} in ${country}`,
             "profileScraperMode": "Full",
             "maxItems": max,
             "startPage": 1
@@ -620,5 +573,5 @@
         targetCount
     };
 
-    console.log('🚀 Outflo Core Engine loaded with organized table display');
+    console.log('🚀 Outflo Core Engine loaded with database save');
 })();

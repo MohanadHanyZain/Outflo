@@ -49,5 +49,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    console.log('📍 Google Maps page ready with organized display');
+    console.log('📍 Google Maps page ready');
 });
