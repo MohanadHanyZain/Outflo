@@ -336,12 +336,13 @@
 
     <script>
         // =============================================
-        // Supabase Configuration (same as before)
+        // Supabase Configuration
         // =============================================
         const SUPABASE_URL = 'https://smhkccanevtpdiuemseb.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaGtjY2FuZXZ0cGRpdWVtc2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MDg0NTQsImV4cCI6MjA5OTA4NDQ1NH0.KzynIoWK_MYc59Syk1b3KKGdhDab2cJKAWLRT6uId30';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Create Supabase client with a unique name to avoid conflicts
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // =============================================
         // DOM Elements
@@ -366,7 +367,7 @@
         // Check if user is already logged in
         // =============================================
         async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 window.location.href = 'index.html';
             }
@@ -426,7 +427,7 @@
         });
 
         // =============================================
-        // ===== SIMPLE TOGGLE FUNCTION - WORKS 100% =====
+        // ===== SIMPLE TOGGLE FUNCTION =====
         // =============================================
         let isLoginMode = true;
 
@@ -561,7 +562,7 @@
             try {
                 if (isLoginMode) {
                     // ===== LOGIN =====
-                    const { data, error } = await supabase.auth.signInWithPassword({
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({
                         email: email,
                         password: password
                     });
@@ -589,7 +590,7 @@
                     // ===== SIGNUP =====
                     const fullName = fullNameInput.value.trim();
 
-                    const { data, error } = await supabase.auth.signUp({
+                    const { data, error } = await supabaseClient.auth.signUp({
                         email: email,
                         password: password,
                         options: {
@@ -660,7 +661,7 @@
                 const params = new URLSearchParams(hash.substring(1));
                 const accessToken = params.get('access_token');
                 if (accessToken) {
-                    const { data, error } = await supabase.auth.setSession({
+                    const { data, error } = await supabaseClient.auth.setSession({
                         access_token: accessToken,
                         refresh_token: params.get('refresh_token') || ''
                     });
@@ -684,8 +685,9 @@
         // =============================================
         // Init - Start in login mode
         // =============================================
-        console.log('🔐 Login page ready - Click "Create Account" to switch');
+        console.log('🔐 Login page ready');
         console.log('📧 Supabase connected to:', SUPABASE_URL);
+        console.log('💡 Click "Create Account" to switch to signup mode');
     </script>
 
 </body>
