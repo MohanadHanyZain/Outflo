@@ -108,6 +108,7 @@
             font-family: 'Inter', sans-serif;
             cursor: pointer;
             transition: all 0.2s ease;
+            margin-top: 8px;
         }
         .btn-auth:hover {
             background: #4F46E5;
@@ -118,6 +119,12 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+        .btn-auth.signup {
+            background: #0A66C2;
+        }
+        .btn-auth.signup:hover {
+            background: #004182;
         }
 
         .auth-divider {
@@ -142,13 +149,13 @@
             font-size: 0.9rem;
             color: #6B7280;
         }
-        .auth-footer a {
+        .auth-footer .toggle-link {
             color: #818CF8;
-            text-decoration: none;
+            cursor: pointer;
             font-weight: 600;
             transition: color 0.2s ease;
         }
-        .auth-footer a:hover {
+        .auth-footer .toggle-link:hover {
             color: #6366F1;
         }
 
@@ -196,16 +203,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        .toggle-mode {
-            color: #818CF8;
-            cursor: pointer;
-            font-weight: 600;
-            transition: color 0.2s ease;
-        }
-        .toggle-mode:hover {
-            color: #6366F1;
-        }
-
         .password-wrapper {
             position: relative;
         }
@@ -224,6 +221,46 @@
         .password-wrapper .toggle-password:hover {
             color: #9CA3AF;
         }
+
+        /* ===== Signup fields (hidden by default) ===== */
+        .signup-fields {
+            display: none;
+        }
+        .signup-fields.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .password-strength {
+            font-size: 0.75rem;
+            margin-top: 6px;
+            color: #6B7280;
+        }
+        .password-strength .weak { color: #F472B6; }
+        .password-strength .medium { color: #FBBF24; }
+        .password-strength .strong { color: #34D399; }
+
+        .terms-text {
+            font-size: 0.75rem;
+            color: #6B7280;
+            text-align: center;
+            margin-top: 12px;
+            line-height: 1.6;
+        }
+        .terms-text a {
+            color: #818CF8;
+            text-decoration: none;
+        }
+        .terms-text a:hover {
+            color: #6366F1;
+        }
+
+        /* Hide divider and footer when signup is active? No, keep them */
     </style>
 </head>
 <body>
@@ -233,20 +270,30 @@
 
             <div class="auth-brand">
                 <h1>Outflo</h1>
-                <p>B2B Intelligence Platform</p>
+                <p id="brandSubtitle">B2B Intelligence Platform</p>
             </div>
 
             <!-- Error / Success Messages -->
             <div class="error-message" id="errorMessage"></div>
             <div class="success-message" id="successMessage"></div>
 
-            <!-- Login Form -->
+            <!-- Auth Form -->
             <form id="authForm" autocomplete="off">
+                <!-- ===== SIGNUP FIELDS (hidden by default) ===== -->
+                <div class="signup-fields" id="signupFields">
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" class="form-control" id="fullName" placeholder="John Doe" />
+                    </div>
+                </div>
+
+                <!-- Email -->
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email" class="form-control" id="email" placeholder="you@example.com" required />
                 </div>
 
+                <!-- Password -->
                 <div class="form-group">
                     <label for="password">Password</label>
                     <div class="password-wrapper">
@@ -254,6 +301,23 @@
                         <button type="button" class="toggle-password" id="togglePassword">
                             <i class="fas fa-eye"></i>
                         </button>
+                    </div>
+                    <div class="password-strength" id="passwordStrength"></div>
+                </div>
+
+                <!-- ===== CONFIRM PASSWORD (hidden by default) ===== -->
+                <div class="signup-fields" id="signupFields2">
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" class="form-control" id="confirmPassword" placeholder="••••••••" />
+                            <button type="button" class="toggle-password" id="toggleConfirmPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="terms-text">
+                        By creating an account, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
                     </div>
                 </div>
 
@@ -266,7 +330,7 @@
 
             <div class="auth-footer">
                 <span id="toggleText">Don't have an account?</span>
-                <span class="toggle-mode" id="toggleMode">Create Account</span>
+                <span class="toggle-link" id="toggleLink">Create Account</span>
             </div>
 
         </div>
@@ -287,13 +351,18 @@
         const form = document.getElementById('authForm');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const fullNameInput = document.getElementById('fullName');
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
         const errorMsg = document.getElementById('errorMessage');
         const successMsg = document.getElementById('successMessage');
-        const toggleMode = document.getElementById('toggleMode');
+        const toggleLink = document.getElementById('toggleLink');
         const toggleText = document.getElementById('toggleText');
-        const togglePasswordBtn = document.getElementById('togglePassword');
+        const brandSubtitle = document.getElementById('brandSubtitle');
+        const passwordStrength = document.getElementById('passwordStrength');
+        const signupFields = document.getElementById('signupFields');
+        const signupFields2 = document.getElementById('signupFields2');
 
         let isLoginMode = true;
 
@@ -311,7 +380,7 @@
         // =============================================
         // Toggle Password Visibility
         // =============================================
-        togglePasswordBtn.addEventListener('click', function() {
+        document.getElementById('togglePassword').addEventListener('click', function() {
             const icon = this.querySelector('i');
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
@@ -322,24 +391,114 @@
             }
         });
 
-        // =============================================
-        // Toggle Login / Signup Mode
-        // =============================================
-        toggleMode.addEventListener('click', function() {
-            isLoginMode = !isLoginMode;
-            if (isLoginMode) {
-                toggleMode.textContent = 'Create Account';
-                toggleText.textContent = "Don't have an account?";
-                btnText.textContent = 'Sign In';
-                document.querySelector('.auth-brand p').textContent = 'B2B Intelligence Platform';
+        document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            if (confirmPasswordInput.type === 'password') {
+                confirmPasswordInput.type = 'text';
+                icon.className = 'fas fa-eye-slash';
             } else {
-                toggleMode.textContent = 'Sign In';
-                toggleText.textContent = "Already have an account?";
-                btnText.textContent = 'Create Account';
-                document.querySelector('.auth-brand p').textContent = 'Start your free trial';
+                confirmPasswordInput.type = 'password';
+                icon.className = 'fas fa-eye';
             }
+        });
+
+        // =============================================
+        // Password Strength Checker
+        // =============================================
+        passwordInput.addEventListener('input', function() {
+            const val = this.value;
+            let strength = '';
+            let className = '';
+
+            if (val.length === 0) {
+                passwordStrength.textContent = '';
+                return;
+            }
+
+            if (val.length < 6) {
+                strength = 'Weak - minimum 6 characters';
+                className = 'weak';
+            } else if (val.length < 10) {
+                strength = 'Medium';
+                className = 'medium';
+            } else {
+                strength = 'Strong';
+                className = 'strong';
+            }
+
+            passwordStrength.innerHTML = 'Strength: <span class="' + className + '">' + strength + '</span>';
+        });
+
+        // =============================================
+        // Toggle between Login and Signup (FIXED & SIMPLE)
+        // =============================================
+        function switchToLogin() {
+            isLoginMode = true;
+            
+            // Update text
+            toggleLink.textContent = 'Create Account';
+            toggleText.textContent = "Don't have an account?";
+            btnText.textContent = 'Sign In';
+            brandSubtitle.textContent = 'B2B Intelligence Platform';
+            submitBtn.className = 'btn-auth';
+            
+            // Hide signup fields
+            signupFields.classList.remove('active');
+            signupFields2.classList.remove('active');
+            
+            // Remove required
+            fullNameInput.removeAttribute('required');
+            confirmPasswordInput.removeAttribute('required');
+            
+            // Clear confirm password
+            confirmPasswordInput.value = '';
+            
+            // Clear messages
             errorMsg.classList.remove('show');
             successMsg.classList.remove('show');
+            
+            console.log('🔐 Switched to Login mode');
+        }
+
+        function switchToSignup() {
+            isLoginMode = false;
+            
+            // Update text
+            toggleLink.textContent = 'Sign In';
+            toggleText.textContent = "Already have an account?";
+            btnText.textContent = 'Create Account';
+            brandSubtitle.textContent = 'Start your free trial';
+            submitBtn.className = 'btn-auth signup';
+            
+            // Show signup fields
+            signupFields.classList.add('active');
+            signupFields2.classList.add('active');
+            
+            // Add required
+            fullNameInput.setAttribute('required', '');
+            confirmPasswordInput.setAttribute('required', '');
+            
+            // Clear messages
+            errorMsg.classList.remove('show');
+            successMsg.classList.remove('show');
+            
+            // Focus on full name
+            setTimeout(function() {
+                fullNameInput.focus();
+            }, 300);
+            
+            console.log('🔐 Switched to Signup mode');
+        }
+
+        // =============================================
+        // Toggle Link Click Handler
+        // =============================================
+        toggleLink.addEventListener('click', function() {
+            if (isLoginMode) {
+                switchToSignup();
+            } else {
+                switchToLogin();
+            }
         });
 
         // =============================================
@@ -382,13 +541,31 @@
             const password = passwordInput.value;
 
             if (!email || !password) {
-                showError('Please fill in all fields.');
+                showError('Please fill in all required fields.');
                 return;
             }
 
             if (password.length < 6) {
                 showError('Password must be at least 6 characters.');
                 return;
+            }
+
+            // Check signup fields
+            if (!isLoginMode) {
+                const fullName = fullNameInput.value.trim();
+                const confirmPassword = confirmPasswordInput.value;
+
+                if (!fullName) {
+                    showError('Please enter your full name.');
+                    fullNameInput.focus();
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showError('Passwords do not match.');
+                    confirmPasswordInput.focus();
+                    return;
+                }
             }
 
             setLoading(true);
@@ -415,19 +592,21 @@
 
                     if (data.session) {
                         showSuccess('Welcome back! Redirecting...');
-                        setTimeout(() => {
+                        setTimeout(function() {
                             window.location.href = 'index.html';
                         }, 1000);
                     }
 
                 } else {
                     // ===== SIGNUP =====
+                    const fullName = fullNameInput.value.trim();
+
                     const { data, error } = await supabase.auth.signUp({
                         email: email,
                         password: password,
                         options: {
                             data: {
-                                full_name: email.split('@')[0]
+                                full_name: fullName
                             }
                         }
                     });
@@ -435,8 +614,10 @@
                     if (error) {
                         if (error.message.includes('User already registered')) {
                             showError('This email is already registered. Please sign in instead.');
-                            setTimeout(() => {
-                                toggleMode.click();
+                            setTimeout(function() {
+                                if (!isLoginMode) {
+                                    switchToLogin();
+                                }
                             }, 2000);
                         } else {
                             showError(error.message);
@@ -448,8 +629,10 @@
                     if (data.user) {
                         if (data.user.identities && data.user.identities.length === 0) {
                             showError('This email is already registered. Please sign in instead.');
-                            setTimeout(() => {
-                                toggleMode.click();
+                            setTimeout(function() {
+                                if (!isLoginMode) {
+                                    switchToLogin();
+                                }
                             }, 2000);
                             setLoading(false);
                             return;
@@ -457,12 +640,16 @@
 
                         showSuccess('Account created successfully! Please check your email to confirm your account.');
                         setLoading(false);
-                        setTimeout(() => {
+
+                        // Auto switch to login after 3 seconds
+                        setTimeout(function() {
                             if (!isLoginMode) {
-                                toggleMode.click();
+                                switchToLogin();
                             }
                             emailInput.value = email;
                             passwordInput.value = '';
+                            confirmPasswordInput.value = '';
+                            showSuccess('Account created! Please sign in with your credentials.');
                         }, 3000);
                         return;
                     }
@@ -506,6 +693,10 @@
             }
         });
 
+        // =============================================
+        // Init - Ensure we start in login mode
+        // =============================================
+        switchToLogin();
         console.log('🔐 Login page ready');
     </script>
 
