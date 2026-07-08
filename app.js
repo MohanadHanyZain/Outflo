@@ -579,6 +579,7 @@
         };
     }
 
+    // ===== FIXED: LinkedIn Input with searchUrl =====
     function prepareLinkedinInput() {
         const linkedinJobEl = getEl('linkedinJob');
         const linkedinCountryEl = getEl('linkedinCountry');
@@ -586,11 +587,14 @@
         const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
         const max = getLeadCount();
         
-        // Build search query with job title and country
-        const searchQuery = `${job} in ${country}`;
+        // Build search URL for LinkedIn people search
+        const keywords = `${job} ${country}`.replace(/ /g, '%20');
+        const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${keywords}`;
+        
+        console.log('🔗 LinkedIn searchUrl:', searchUrl);
         
         return {
-            "searchQuery": searchQuery,
+            "searchUrl": searchUrl,
             "profileScraperMode": "Full",
             "maxItems": max,
             "startPage": 1
@@ -621,4 +625,5 @@
     };
 
     console.log('🚀 Outflo Core Engine loaded with organized table display');
+    console.log('🔗 LinkedIn now uses searchUrl instead of searchQuery');
 })();
