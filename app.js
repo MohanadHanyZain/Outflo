@@ -188,7 +188,6 @@
         emailStats = { found:0, predicted:0, fallback:0 };
         let display = items || [];
 
-        // Apply LinkedIn filter if needed
         if (platform === 'linkedin') {
             const linkedinJobInput = getEl('linkedinJob');
             const kw = linkedinJobInput ? linkedinJobInput.value.trim() : '';
@@ -199,7 +198,6 @@
             }
         }
 
-        // Trim to target count
         if (targetCount && targetCount > 0 && display.length > targetCount) {
             display = display.slice(0, targetCount);
         }
@@ -224,7 +222,6 @@
             let cols = [];
             
             if (platform === 'google') {
-                // ===== GOOGLE MAPS - Organized =====
                 const name = item.name || item.title || 'Unknown';
                 const phone = item.phone || '—';
                 const website = item.website || '—';
@@ -244,7 +241,6 @@
                     `<span class="badge-platform google">Google Maps</span>`
                 ];
             } else {
-                // ===== LINKEDIN - Organized =====
                 const fullName = item.fullName || item.name || item.firstName || 'Unknown';
                 const jobTitle = item.headline || item.occupation || item.jobTitle || '—';
                 const company = item.currentCompany || item.company || '—';
@@ -309,7 +305,6 @@
             statsRow.style.display = 'none';
         }
 
-        // Save to database
         if (display && display.length > 0) {
             console.log('💾 Triggering database save from renderTable...');
             saveToDatabase(display, platform);
@@ -425,6 +420,42 @@
         URL.revokeObjectURL(link.href);
     }
 
+    // ===== Parse Google Results to LinkedIn =====
+    function parseGoogleResultsToLinkedIn(items) {
+        return items.map(item => {
+            const title = item.title || '';
+            const url = item.url || item.profileUrl || '';
+            const description = item.description || '';
+            
+            const nameMatch = title.match(/^([^-|]+)/);
+            const fullName = nameMatch ? nameMatch[1].trim() : title;
+            
+            const titleParts = title.split(/[-|]/);
+            const jobTitle = titleParts.length > 1 ? titleParts[1].trim() : description.split(' - ')[0] || '';
+            
+            const companyMatch = description.match(/at\s+(.+?)(?:\s*[-|]|\s*$)/) || 
+                                description.match(/·\s*(.+?)(?:\s*$)/);
+            const company = companyMatch ? companyMatch[1].trim() : '';
+            
+            const locationMatch = description.match(/·\s*([^·]+?)\s*·\s*[^·]*$/);
+            const location = locationMatch ? locationMatch[1].trim() : '';
+            
+            return {
+                fullName: fullName,
+                headline: jobTitle,
+                occupation: jobTitle,
+                jobTitle: jobTitle,
+                currentCompany: company,
+                company: company,
+                location: location,
+                profileUrl: url,
+                url: url,
+                description: description,
+                title: title
+            };
+        }).filter(item => item.profileUrl && item.profileUrl.includes('linkedin.com/in/'));
+    }
+
     // ===== Run Actor =====
     async function runActor(actorId, inputData, platform, targetCountParam) {
         targetCount = targetCountParam || getLeadCount();
@@ -503,7 +534,13 @@
                                 console.warn('⚠️ Dataset response is not an array:', items);
                                 renderTable([], platform);
                             } else {
-                                renderTable(items, platform);
+                                if (platform === 'linkedin' && actorId === 'Wp9rLb1xk0Z6e3JX9') {
+                                    const linkedinItems = parseGoogleResultsToLinkedIn(items);
+                                    console.log(`📊 Converted ${linkedinItems.length} LinkedIn profiles from Google results`);
+                                    renderTable(linkedinItems, platform);
+                                } else {
+                                    renderTable(items, platform);
+                                }
                             }
                             const total = currentItems.length;
                             const summary = platform === 'linkedin' ? 
@@ -586,14 +623,18 @@
         const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
         const max = getLeadCount();
         
-        // Build search query with job title and country
-        const searchQuery = `${job} in ${country}`;
+        const query = `site:linkedin.com/in/ "${job}" "${country}"`;
+        const maxPages = Math.ceil(max / 10);
+        
+        console.log('🔗 Generated LinkedIn Google Search Query:', query);
         
         return {
-            "searchQuery": searchQuery,
-            "profileScraperMode": "Full",
-            "maxItems": max,
-            "startPage": 1
+            "query": query,
+            "maxPages": maxPages,
+            "proxyConfiguration": {
+                "useApifyProxy": true,
+                "apifyProxyGroups": ["GOOGLE_SERP"]
+            }
         };
     }
 
@@ -617,7 +658,8 @@
         currentItems,
         emailStats,
         currentPlatform,
-        targetCount
+        targetCount,
+        parseGoogleResultsToLinkedIn
     };
 
     console.log('🚀 Outflo Core Engine loaded with organized table display');

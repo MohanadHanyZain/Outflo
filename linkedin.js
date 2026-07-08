@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (runLinkedinBtn) {
         runLinkedinBtn.addEventListener('click', function() {
             console.log('🚀🚀🚀 RUNNING LINKEDIN SCRAPER...');
-            console.log('📌 Using Actor: M2FMdjRVeF1HPGFcc (LinkedIn Profile Search)');
+            console.log('📌 Using Actor: Wp9rLb1xk0Z6e3JX9 (Google Search for LinkedIn)');
             
             if (!window.Outflo) {
                 console.error('❌ Outflo not loaded');
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('📦 Input:', input);
             console.log('🎯 Target count:', count);
             
-            window.Outflo.runActor('M2FMdjRVeF1HPGFcc', input, 'linkedin', count);
+            window.Outflo.runActor('Wp9rLb1xk0Z6e3JX9', input, 'linkedin', count);
         });
     }
 
@@ -51,5 +51,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    console.log('🔗 LinkedIn page ready with Actor: M2FMdjRVeF1HPGFcc');
+    console.log('🔗 LinkedIn page ready with Actor: Wp9rLb1xk0Z6e3JX9');
 });
