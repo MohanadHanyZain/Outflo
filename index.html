@@ -56,19 +56,22 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .stat-box .stat-sub {
-            font-size: 0.6rem;
-            color: #6B7280;
-        }
         .lead-item {
             background: #1A202C;
-            border: 1px solid #2D3748;
-            border-radius: 8px;
+            border-bottom: 1px solid #2D3748;
             padding: 12px 16px;
             transition: all 0.2s ease;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
         }
         .lead-item:hover {
-            border-color: #4F46E5;
+            background: #1F2937;
+        }
+        .lead-item:last-child {
+            border-bottom: none;
         }
         .lead-item .lead-platform {
             font-size: 0.65rem;
@@ -103,7 +106,7 @@
             color: #F472B6;
         }
         .lead-results-grid {
-            max-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
         }
         .lead-results-grid::-webkit-scrollbar {
@@ -118,13 +121,32 @@
             border: 1px solid #2D3748;
             border-radius: 4px;
             color: #9CA3AF;
-            padding: 2px 8px;
+            padding: 2px 10px;
             font-size: 0.7rem;
             transition: all 0.2s ease;
         }
         .btn-download-lead:hover {
             border-color: #4F46E5;
             color: white;
+        }
+        .loading-dashboard {
+            padding: 40px;
+            text-align: center;
+            color: #6B7280;
+        }
+        .loading-dashboard .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #2D3748;
+            border-top: 3px solid #6366F1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -253,7 +275,10 @@
                 <span class="text-secondary small" id="leadCount">0 records</span>
             </div>
             <div class="lead-results-grid" id="leadsContainer">
-                <!-- Dynamic content -->
+                <div class="loading-dashboard">
+                    <div class="spinner"></div>
+                    <p>Loading your data...</p>
+                </div>
             </div>
         </div>
 
@@ -302,24 +327,45 @@
             let allLeads = [];
 
             async function loadDashboard() {
-                const userData = await Auth.initAuth();
-                if (!userData) return;
+                console.log('📊 Loading dashboard...');
                 
-                currentUser = userData.user;
-                console.log('✅ Authenticated:', currentUser.email);
-                
-                // Load stats and leads
-                const { stats, leads } = await Auth.loadDashboardStats(currentUser.id);
-                allLeads = leads;
-                
-                // Update stats
-                document.getElementById('statTotal').textContent = stats.total;
-                document.getElementById('statGoogle').textContent = stats.google;
-                document.getElementById('statLinkedin').textContent = stats.linkedin;
-                document.getElementById('statReady').textContent = stats.ready;
-                
-                // Render leads
-                renderLeads(leads);
+                try {
+                    const userData = await Auth.initAuth();
+                    if (!userData) {
+                        console.log('❌ No user authenticated');
+                        return;
+                    }
+                    
+                    currentUser = userData.user;
+                    console.log('✅ Authenticated:', currentUser.email);
+                    console.log('👤 User ID:', currentUser.id);
+                    
+                    // Load data from database
+                    const { stats, leads } = await Auth.loadDashboardData(currentUser.id);
+                    allLeads = leads;
+                    
+                    console.log('📊 Stats:', stats);
+                    console.log('📊 Leads count:', leads.length);
+                    
+                    // Update stats
+                    document.getElementById('statTotal').textContent = stats.total || 0;
+                    document.getElementById('statGoogle').textContent = stats.google || 0;
+                    document.getElementById('statLinkedin').textContent = stats.linkedin || 0;
+                    document.getElementById('statReady').textContent = stats.ready || 0;
+                    
+                    // Render leads
+                    renderLeads(leads);
+                    
+                } catch (err) {
+                    console.error('❌ Error loading dashboard:', err);
+                    document.getElementById('leadsContainer').innerHTML = `
+                        <div class="dashboard-empty">
+                            <i class="fas fa-exclamation-triangle" style="color:#F472B6;"></i>
+                            <h5>Error Loading Data</h5>
+                            <p>${err.message || 'Please try refreshing the page.'}</p>
+                        </div>
+                    `;
+                }
             }
 
             function renderLeads(leads) {
@@ -361,7 +407,7 @@
                     });
                     
                     html += `
-                        <div class="lead-item d-flex flex-wrap align-items-center justify-content-between gap-2" style="border-bottom: 1px solid #2D3748; border-radius: 0;">
+                        <div class="lead-item">
                             <div class="d-flex align-items-center gap-3 flex-wrap">
                                 <span class="lead-platform ${platformClass}">${lead.platform === 'google' ? '🗺️ Google' : '🔗 LinkedIn'}</span>
                                 <span class="text-light small fw-semibold">${lead.search_query || 'N/A'}</span>
@@ -472,6 +518,21 @@
             // Load dashboard
             // =============================================
             loadDashboard();
+
+            // Refresh data every 30 seconds
+            setInterval(() => {
+                if (currentUser) {
+                    console.log('🔄 Refreshing dashboard data...');
+                    Auth.loadDashboardData(currentUser.id).then(({ stats, leads }) => {
+                        allLeads = leads;
+                        document.getElementById('statTotal').textContent = stats.total || 0;
+                        document.getElementById('statGoogle').textContent = stats.google || 0;
+                        document.getElementById('statLinkedin').textContent = stats.linkedin || 0;
+                        document.getElementById('statReady').textContent = stats.ready || 0;
+                        renderLeads(leads);
+                    });
+                }
+            }, 30000);
         });
     </script>
 
