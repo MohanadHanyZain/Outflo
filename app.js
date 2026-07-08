@@ -1,4 +1,4 @@
-// ===== CORE LOGIC - Enhanced with No-CORS method =====
+// ===== CORE LOGIC - FINAL VERSION WITH NO-CORS =====
 
 (function() {
     "use strict";
@@ -25,10 +25,7 @@
     let statTotal = getEl('statTotal');
 
     // ===== State =====
-    let currentDatasetId = null;
     let currentItems = [];
-    let isPolling = false;
-    let pollInterval = null;
     let currentPlatform = 'google';
     let filteredCount = 0;
     let emailStats = { found: 0, predicted: 0, fallback: 0 };
@@ -86,18 +83,14 @@
             ].filter(Boolean).map(s=>s.toLowerCase()).join(' ');
             return search.some(t => text.includes(t)) || (kw.length>2 && text.includes(kw));
         });
-        return filtered.sort((a,b) => {
-            const ea = huntEmail(a), eb = huntEmail(b);
-            const pri = e => e.source === 'Found ✓' || e.source === 'Regex Sniped' ? 0 : 1;
-            return pri(ea) - pri(eb);
-        });
+        return filtered;
     }
 
     // =============================================
     // ===== SAVE TO DATABASE =====
     // =============================================
     async function saveToDatabase(items, platform) {
-        console.log('💾 SAVING TO DATABASE FROM APP.JS...');
+        console.log('💾 SAVING TO DATABASE...');
         console.log('📊 Platform:', platform);
         console.log('📊 Items count:', items ? items.length : 0);
 
@@ -109,11 +102,9 @@
 
             const user = await Auth.getCurrentUser();
             if (!user) {
-                console.log('⚠️ No user logged in, skipping database save');
+                console.log('⚠️ No user logged in');
                 return false;
             }
-
-            console.log('👤 User ID:', user.id);
 
             let searchQuery = '';
             let location = '';
@@ -129,9 +120,6 @@
                 searchQuery = linkedinJob ? linkedinJob.value.trim() : 'Marketing Manager';
                 location = linkedinCountry ? linkedinCountry.value.trim() : 'Egypt';
             }
-
-            console.log('🔍 Search:', searchQuery);
-            console.log('📍 Location:', location);
 
             const result = await Auth.saveLead(
                 user.id,
@@ -155,7 +143,7 @@
     }
 
     // =============================================
-    // ===== RENDER TABLE - ORGANIZED =====
+    // ===== RENDER TABLE =====
     // =============================================
     function renderTable(items, platform) {
         if (!tableBody) return;
@@ -316,13 +304,6 @@
     }
 
     function resetAllData() {
-        if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-        isPolling = false;
-        currentDatasetId = null;
-        currentItems = [];
-        filteredCount = 0;
-        emailStats = { found:0, predicted:0, fallback:0 };
-        targetCount = 20;
         if (downloadBtn) downloadBtn.disabled = true;
         if (statsRow) statsRow.style.display = 'none';
         if (tableBody) {
@@ -394,18 +375,21 @@
     }
 
     // =============================================
-    // ===== NEW: runActorNoCORS (uses run-sync-get-dataset-items) =====
+    // ===== THE ONLY FUNCTION USED - No CORS =====
     // =============================================
-    async function runActorNoCORS(actorId, inputData, platform, targetCountParam) {
+    async function runActorDirect(actorId, inputData, platform, targetCountParam) {
         targetCount = targetCountParam || getLeadCount();
         resetAllData();
         currentPlatform = platform;
         buildTableHeaders(platform);
-        updateStatus('<i class="fas fa-spinner fa-spin me-2"></i> Starting cloud engine...', 15, true);
-        console.log(`🚀 Starting actor: ${actorId} for platform: ${platform}, target: ${targetCount}`);
+        updateStatus('<i class="fas fa-spinner fa-spin me-2"></i> Running scraper...', 15, true);
+        console.log(`🚀 Running actor: ${actorId} for platform: ${platform}`);
 
         try {
+            // استخدام الطريقة التي لا تعاني من CORS
             const url = `https://api.apify.com/v2/acts/${actorId}/runs-sync-get-dataset-items?token=${API_TOKEN}`;
+            console.log('📡 Sending request to:', url.replace(API_TOKEN, '***HIDDEN***'));
+            
             const resp = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -415,14 +399,14 @@
             if (!resp.ok) {
                 const errText = await resp.text();
                 console.error('❌ API error:', resp.status, errText);
-                throw new Error(`Start failed: ${resp.status} - ${errText}`);
+                throw new Error(`Request failed: ${resp.status} - ${errText}`);
             }
 
             const items = await resp.json();
-            console.log(`📊 Received ${items.length} items from dataset`);
+            console.log(`📊 Received ${items.length} items`);
 
             if (!Array.isArray(items)) {
-                console.warn('⚠️ Response is not an array:', items);
+                console.warn('⚠️ Response is not an array');
                 renderTable([], platform);
             } else {
                 renderTable(items, platform);
@@ -431,13 +415,12 @@
             const total = currentItems.length;
             const summary = platform === 'linkedin' ? 
                 ` (📧 ${emailStats.found} found, ${emailStats.fallback} not available)` : '';
-            const filterMsg = platform === 'linkedin' && filteredCount > 0 ? ` (filtered ${filteredCount})` : '';
-            updateStatus(`<i class="fas fa-check-circle text-success me-2"></i> Done! ${total} leads${filterMsg}${summary}`, 100, true);
+            updateStatus(`<i class="fas fa-check-circle text-success me-2"></i> Done! ${total} leads${summary}`, 100, true);
             if (downloadBtn) downloadBtn.disabled = (total === 0);
-            console.log(`🏁 Finished: ${total} leads displayed`);
+            console.log(`🏁 Finished: ${total} leads`);
 
         } catch (e) {
-            console.error('❌ runActorNoCORS error:', e.message);
+            console.error('❌ Error:', e.message);
             showError(`Error: ${e.message}`);
         }
     }
@@ -485,7 +468,6 @@
         const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
         const max = getLeadCount();
 
-        // Build search URL for LinkedIn people search
         const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(job + ' ' + country)}`;
         console.log('🔗 LinkedIn searchUrl:', searchUrl);
 
@@ -499,27 +481,23 @@
 
     // ===== Expose =====
     window.Outflo = {
-        API_TOKEN,
         getLeadCount,
         huntEmail,
         getProfileLink,
-        filterLinkedInItems,
         renderTable,
         buildTableHeaders,
         updateStatus,
         showError,
         resetAllData,
         downloadCsv,
-        runActorNoCORS,
+        runActorDirect,
         prepareGoogleInput,
         prepareLinkedinInput,
-        saveToDatabase,
         currentItems,
         emailStats,
-        currentPlatform,
-        targetCount
+        currentPlatform
     };
 
-    console.log('🚀 Outflo Core Engine loaded with No-CORS method');
+    console.log('🚀 Outflo Core Engine loaded - NO CORS!');
     console.log('📧 Only real emails from Apify will be displayed');
 })();

@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (runGoogleBtn) {
         runGoogleBtn.addEventListener('click', function() {
-            console.log('🚀🚀🚀 RUNNING GOOGLE SCRAPER...');
+            console.log('🚀 RUNNING GOOGLE SCRAPER...');
             
             if (!window.Outflo) {
                 console.error('❌ Outflo not loaded');
@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const input = window.Outflo.prepareGoogleInput();
             console.log('📦 Input:', input);
             
-            // استخدم الطريقة الجديدة التي لا تعاني من CORS
-            window.Outflo.runActorNoCORS('AabCualFIriz3X6Fs', input, 'google', window.Outflo.getLeadCount());
+            // استخدام الطريقة التي لا تعاني من CORS
+            window.Outflo.runActorDirect('AabCualFIriz3X6Fs', input, 'google', window.Outflo.getLeadCount());
         });
     }
 

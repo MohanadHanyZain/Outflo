@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (runLinkedinBtn) {
         runLinkedinBtn.addEventListener('click', function() {
-            console.log('🚀🚀🚀 RUNNING LINKEDIN SCRAPER...');
+            console.log('🚀 RUNNING LINKEDIN SCRAPER...');
             
             if (!window.Outflo) {
                 console.error('❌ Outflo not loaded');
@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const input = window.Outflo.prepareLinkedinInput();
             console.log('📦 Input:', input);
             
-            // استخدم الطريقة الجديدة التي لا تعاني من CORS
-            window.Outflo.runActorNoCORS('M2FMdjRVeF1HPGFcc', input, 'linkedin', window.Outflo.getLeadCount());
+            // استخدام الطريقة التي لا تعاني من CORS
+            window.Outflo.runActorDirect('M2FMdjRVeF1HPGFcc', input, 'linkedin', window.Outflo.getLeadCount());
         });
     }
 
