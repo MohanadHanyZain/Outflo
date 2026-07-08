@@ -1,4 +1,4 @@
-// ===== CORE LOGIC - Only removed email prediction =====
+// ===== CORE LOGIC - Enhanced with better table display =====
 
 (function() {
     "use strict";
@@ -43,54 +43,49 @@
         return val;
     }
 
-    // =============================================
-    // ===== EMAIL EXTRACTOR - NO PREDICTION =====
-    // =============================================
-    function extractEmail(item) {
-        // Only return real emails from Apify data
-        const emailFields = ['email', 'emailAddress', 'contactInfo.email', 'primaryEmail', 'workEmail', 'contactEmail'];
-        for (let field of emailFields) {
-            const val = field.includes('.') ? field.split('.').reduce((o, k) => o?.[k], item) : item[field];
+    // ===== Email Hunter =====
+    function huntEmail(item) {
+        const direct = ['email', 'emailAddress', 'contactInfo.email', 'primaryEmail', 'workEmail', 'contactEmail'];
+        for (let f of direct) {
+            const val = f.includes('.') ? f.split('.').reduce((o,k)=>o?.[k], item) : item[f];
             if (val && typeof val === 'string' && val.trim() && val.includes('@')) {
                 return { email: val.trim(), source: 'Found ✓' };
             }
         }
-
-        // Search in text fields for real emails
-        const textFields = ['headline', 'description', 'about', 'summary', 'bio', 'occupation', 'jobTitle', 'title'];
-        for (let field of textFields) {
-            if (item[field] && typeof item[field] === 'string') {
-                const regex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
-                const match = item[field].match(regex);
-                if (match) {
-                    return { email: match[0], source: 'Regex Sniped' };
-                }
-            }
-        }
-
-        // Final check in full object
         const fullText = JSON.stringify(item);
-        const globalRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-        const matches = fullText.match(globalRegex);
-        if (matches && matches.length > 0) {
+        const re = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        const matches = fullText.match(re);
+        if (matches && matches.length) {
             const unique = [...new Set(matches)];
-            const validEmails = unique.filter(email => 
-                !email.includes('example.com') && 
-                !email.includes('test.com') &&
-                !email.includes('sample.com')
-            );
-            if (validEmails.length > 0) {
-                return { email: validEmails[0], source: 'Regex Sniped' };
+            return { email: unique[0], source: 'Regex Sniped' };
+        }
+        const firstName = item.firstName || item.name?.split(' ')[0] || '';
+        const lastName = item.lastName || item.name?.split(' ').slice(1).join(' ') || '';
+        const company = item.currentCompany?.name || item.currentCompany || item.companyName || item.company || '';
+        if (firstName && company) {
+            const clean = company.replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
+            const f = firstName.replace(/[^a-zA-Z]/g,'').toLowerCase();
+            if (clean.length > 2) {
+                return { email: `${f}@${clean}.com`, source: 'Predicted (Company)' };
             }
         }
-
-        // No email found - return null
-        return { email: null, source: 'Not Found' };
+        if (firstName && lastName) {
+            const f = firstName.replace(/[^a-zA-Z]/g,'').toLowerCase();
+            const l = lastName.replace(/[^a-zA-Z]/g,'').toLowerCase();
+            if (f && l) {
+                return { email: `${f}.${l}@gmail.com`, source: 'Predicted (Gmail)' };
+            }
+        }
+        const social = ['twitter','facebook','instagram','tiktok','youtube','whatsapp','phone'];
+        for (let s of social) {
+            const val = item[s] || item[`${s}Url`] || item[`${s}Link`];
+            if (val && typeof val === 'string' && val.trim()) {
+                return { email: `@${val}`, source: 'Social Contact' };
+            }
+        }
+        return { email: 'Unavailable 🔒', source: 'Fallback' };
     }
 
-    // =============================================
-    // ===== GET PROFILE LINK =====
-    // =============================================
     function getProfileLink(item) {
         const link = item.url || item.profileUrl || item.link || item.linkedinUrl || 
                      item.publicProfileUrl || item.profile_link || item.linkedin_profile_url ||
@@ -102,25 +97,22 @@
         return m && m.length ? m[0] : '#';
     }
 
-    // =============================================
-    // ===== FILTER LINKEDIN ITEMS =====
-    // =============================================
+    // ===== Filter LinkedIn =====
     function filterLinkedInItems(items, keyword) {
         if (!keyword || !keyword.trim()) return items;
         const kw = keyword.trim().toLowerCase();
-        const terms = kw.split(/\s+/).filter(k => k.length > 1);
-        const search = terms.length > 1 ? terms : [kw];
+        const terms = kw.split(/\s+/).filter(k=>k.length>1);
+        const search = terms.length>1 ? terms : [kw];
         const filtered = items.filter(item => {
             const text = [
                 item.headline, item.description, item.title, 
                 item.occupation, item.jobTitle, item.fullName
-            ].filter(Boolean).map(s => s.toLowerCase()).join(' ');
-            return search.some(t => text.includes(t)) || (kw.length > 2 && text.includes(kw));
+            ].filter(Boolean).map(s=>s.toLowerCase()).join(' ');
+            return search.some(t => text.includes(t)) || (kw.length>2 && text.includes(kw));
         });
-        return filtered.sort((a, b) => {
-            const ea = extractEmail(a);
-            const eb = extractEmail(b);
-            const pri = e => e.email !== null ? 0 : 1;
+        return filtered.sort((a,b) => {
+            const ea = huntEmail(a), eb = huntEmail(b);
+            const pri = e => e.source.includes('Found') || e.source.includes('Regex') ? 0 : e.source.includes('Predicted') ? 1 : 2;
             return pri(ea) - pri(eb);
         });
     }
@@ -129,7 +121,7 @@
     // ===== SAVE TO DATABASE =====
     // =============================================
     async function saveToDatabase(items, platform) {
-        console.log('💾 SAVING TO DATABASE FROM APP.JS...');
+        console.log('💾💾💾 SAVING TO DATABASE FROM APP.JS...');
         console.log('📊 Platform:', platform);
         console.log('📊 Items count:', items ? items.length : 0);
 
@@ -174,7 +166,7 @@
             );
 
             if (result) {
-                console.log('✅ DATA SAVED TO DATABASE SUCCESSFULLY!');
+                console.log('✅✅✅ DATA SAVED TO DATABASE SUCCESSFULLY!');
                 console.log('📝 Saved lead ID:', result[0]?.id || 'unknown');
                 return true;
             } else {
@@ -182,20 +174,21 @@
                 return false;
             }
         } catch (err) {
-            console.error('❌ Error saving to database:', err);
+            console.error('❌❌❌ Error saving to database:', err);
             return false;
         }
     }
 
     // =============================================
-    // ===== RENDER TABLE =====
+    // ===== RENDER TABLE - ORGANIZED =====
     // =============================================
     function renderTable(items, platform) {
         if (!tableBody) return;
         tableBody.innerHTML = '';
-        emailStats = { found: 0, predicted: 0, fallback: 0 };
+        emailStats = { found:0, predicted:0, fallback:0 };
         let display = items || [];
 
+        // Apply LinkedIn filter if needed
         if (platform === 'linkedin') {
             const linkedinJobInput = getEl('linkedinJob');
             const kw = linkedinJobInput ? linkedinJobInput.value.trim() : '';
@@ -206,6 +199,7 @@
             }
         }
 
+        // Trim to target count
         if (targetCount && targetCount > 0 && display.length > targetCount) {
             display = display.slice(0, targetCount);
         }
@@ -230,6 +224,7 @@
             let cols = [];
             
             if (platform === 'google') {
+                // ===== GOOGLE MAPS - Organized =====
                 const name = item.name || item.title || 'Unknown';
                 const phone = item.phone || '—';
                 const website = item.website || '—';
@@ -249,22 +244,24 @@
                     `<span class="badge-platform google">Google Maps</span>`
                 ];
             } else {
+                // ===== LINKEDIN - Organized =====
                 const fullName = item.fullName || item.name || item.firstName || 'Unknown';
                 const jobTitle = item.headline || item.occupation || item.jobTitle || '—';
                 const company = item.currentCompany || item.company || '—';
                 const location = item.location || '—';
+                const emailRes = huntEmail(item);
                 
-                const emailRes = extractEmail(item);
                 let emailDisplay = emailRes.email;
                 let badgeClass = 'badge-email';
-                
-                if (emailRes.email !== null) {
+                if (emailRes.source.includes('Found') || emailRes.source.includes('Regex')) {
                     badgeClass += ' found';
                     emailStats.found++;
+                } else if (emailRes.source.includes('Predicted')) {
+                    badgeClass += ' predicted';
+                    emailStats.predicted++;
                 } else {
                     badgeClass += ' fallback';
                     emailStats.fallback++;
-                    emailDisplay = 'Not Available';
                 }
                 const emailHtml = `<span class="${badgeClass}" title="${emailRes.source}">${emailDisplay}</span>`;
                 
@@ -297,7 +294,7 @@
         currentItems = display;
         const total = display.length;
         const summary = platform === 'linkedin' ? 
-            ` | 📧 ${emailStats.found} found, ${emailStats.fallback} not available` : '';
+            ` | 📧 ${emailStats.found} found, ${emailStats.predicted} predicted` : '';
         const filterInfo = platform === 'linkedin' && filteredCount > 0 ? ` (filtered ${filteredCount})` : '';
         if (resultCount) resultCount.innerText = `${total} leads${filterInfo}${summary}`;
         if (downloadBtn) downloadBtn.disabled = false;
@@ -305,13 +302,14 @@
         if (platform === 'linkedin' && statsRow) {
             statsRow.style.display = 'flex';
             if (statFound) statFound.innerText = emailStats.found;
-            if (statPredicted) statPredicted.innerText = 0;
+            if (statPredicted) statPredicted.innerText = emailStats.predicted;
             if (statFallback) statFallback.innerText = emailStats.fallback;
             if (statTotal) statTotal.innerText = total;
         } else if (statsRow) {
             statsRow.style.display = 'none';
         }
 
+        // Save to database
         if (display && display.length > 0) {
             console.log('💾 Triggering database save from renderTable...');
             saveToDatabase(display, platform);
@@ -334,7 +332,7 @@
     }
 
     // ===== Status =====
-    function updateStatus(text, percent, isActive = true) {
+    function updateStatus(text, percent, isActive=true) {
         if (statusMsg) statusMsg.innerHTML = text;
         if (progressBar) progressBar.style.width = Math.min(100, Math.max(0, percent)) + '%';
         if (statusPulse) {
@@ -355,7 +353,7 @@
         currentDatasetId = null;
         currentItems = [];
         filteredCount = 0;
-        emailStats = { found: 0, predicted: 0, fallback: 0 };
+        emailStats = { found:0, predicted:0, fallback:0 };
         targetCount = 20;
         if (downloadBtn) downloadBtn.disabled = true;
         if (statsRow) statsRow.style.display = 'none';
@@ -394,13 +392,13 @@
         } else {
             headers = ['Full Name', 'Job Title', 'Company', 'Location', 'Email', 'Email Source', 'Profile URL', 'Source'];
             rows = currentItems.map(item => {
-                const e = extractEmail(item);
+                const e = huntEmail(item);
                 return [
                     item.fullName || item.name || item.firstName || '',
                     item.headline || item.occupation || item.jobTitle || '',
                     item.currentCompany || item.company || '',
                     item.location || '',
-                    e.email || '',
+                    e.email,
                     e.source,
                     getProfileLink(item),
                     'LinkedIn'
@@ -411,7 +409,7 @@
         rows.forEach(row => {
             const escaped = row.map(cell => {
                 if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"') || cell.includes('\n'))) {
-                    return `"${cell.replace(/"/g, '""')}"`;
+                    return `"${cell.replace(/"/g,'""')}"`;
                 }
                 return cell;
             });
@@ -480,13 +478,11 @@
                     const sData = await sRes.json();
                     const runStatus = sData.data?.status;
                     console.log(`🔄 Poll #${attempts}: status = ${runStatus}`);
-                    let progress = 30 + (attempts / maxAttempts) * 40;
+                    let progress = 30 + (attempts/maxAttempts)*40;
                     progress = Math.min(80, progress);
 
                     if (runStatus === 'SUCCEEDED') {
-                        clearInterval(pollInterval);
-                        pollInterval = null;
-                        isPolling = false;
+                        clearInterval(pollInterval); pollInterval = null; isPolling = false;
                         updateStatus('<i class="fas fa-cloud-download-alt me-2"></i> Pulling data...', 85, true);
                         console.log('✅ Run succeeded, fetching dataset...');
                         if (!currentDatasetId) {
@@ -511,7 +507,7 @@
                             }
                             const total = currentItems.length;
                             const summary = platform === 'linkedin' ? 
-                                ` (📧 ${emailStats.found} found, ${emailStats.fallback} not available)` : '';
+                                ` (📧 ${emailStats.found} found, ${emailStats.predicted} predicted)` : '';
                             const filterMsg = platform === 'linkedin' && filteredCount > 0 ? ` (filtered ${filteredCount})` : '';
                             updateStatus(`<i class="fas fa-check-circle text-success me-2"></i> Done! ${total} leads${filterMsg}${summary}`, 100, true);
                             if (downloadBtn) downloadBtn.disabled = (total === 0);
@@ -521,25 +517,19 @@
                             showError('Dataset ID missing');
                         }
                     } else if (runStatus === 'FAILED' || runStatus === 'ABORTED' || runStatus === 'TIMED-OUT') {
-                        clearInterval(pollInterval);
-                        pollInterval = null;
-                        isPolling = false;
+                        clearInterval(pollInterval); pollInterval = null; isPolling = false;
                         console.error(`❌ Run ended with status: ${runStatus}`);
                         showError(`Run ${runStatus}`);
                     } else {
                         updateStatus(`<i class="fas fa-spinner fa-spin me-2"></i> Status: ${runStatus || 'Running'} (attempt ${attempts})`, progress, true);
                     }
                     if (attempts >= maxAttempts && isPolling) {
-                        clearInterval(pollInterval);
-                        pollInterval = null;
-                        isPolling = false;
+                        clearInterval(pollInterval); pollInterval = null; isPolling = false;
                         console.warn('⚠️ Max polling attempts reached, giving up.');
                         showError('Timeout – try again');
                     }
                 } catch (e) {
-                    clearInterval(pollInterval);
-                    pollInterval = null;
-                    isPolling = false;
+                    clearInterval(pollInterval); pollInterval = null; isPolling = false;
                     console.error('❌ Polling error:', e.message);
                     showError(`Poll error: ${e.message}`);
                 }
@@ -549,8 +539,7 @@
             console.error('❌ runActor error:', e.message);
             showError(`Error: ${e.message}`);
             isPolling = false;
-            if (pollInterval) { clearInterval(pollInterval);
-                pollInterval = null; }
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
         }
     }
 
@@ -597,13 +586,13 @@
         const country = linkedinCountryEl ? linkedinCountryEl.value.trim() : 'Egypt';
         const max = getLeadCount();
         
-        // استخدام صيغة البحث التي كانت تعمل سابقاً
+        // Build search query with job title and country
         const searchQuery = `${job} in ${country}`;
         
         return {
             "searchQuery": searchQuery,
             "profileScraperMode": "Full",
-            "maxItems": max * 3,
+            "maxItems": max,
             "startPage": 1
         };
     }
@@ -612,7 +601,7 @@
     window.Outflo = {
         API_TOKEN,
         getLeadCount,
-        extractEmail,
+        huntEmail,
         getProfileLink,
         filterLinkedInItems,
         renderTable,
@@ -631,6 +620,5 @@
         targetCount
     };
 
-    console.log('🚀 Outflo Core Engine loaded');
-    console.log('📧 Only real emails from Apify will be displayed');
+    console.log('🚀 Outflo Core Engine loaded with organized table display');
 })();
