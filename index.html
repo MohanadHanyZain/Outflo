@@ -1,540 +1,130 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Outflo — Dashboard</title>
-
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <!-- Google Font (Inter) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
-    <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="style.css" />
-    <style>
-        .dashboard-empty {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 60px 20px;
-            text-align: center;
-        }
-        .dashboard-empty i {
-            font-size: 3.5rem;
-            color: #2D3748;
-            margin-bottom: 16px;
-        }
-        .dashboard-empty h5 {
-            color: #E5E7EB;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        .dashboard-empty p {
-            color: #6B7280;
-            max-width: 400px;
-            margin-bottom: 16px;
-        }
-        .stat-box {
-            background: #111827;
-            border-radius: 10px;
-            padding: 16px 20px;
-            border-left: 3px solid #6366F1;
-        }
-        .stat-box .stat-number {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-        }
-        .stat-box .stat-label {
-            font-size: 0.7rem;
-            color: #9CA3AF;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .lead-item {
-            background: #1A202C;
-            border-bottom: 1px solid #2D3748;
-            padding: 12px 16px;
-            transition: all 0.2s ease;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-        }
-        .lead-item:hover {
-            background: #1F2937;
-        }
-        .lead-item:last-child {
-            border-bottom: none;
-        }
-        .lead-item .lead-platform {
-            font-size: 0.65rem;
-            padding: 2px 10px;
-            border-radius: 20px;
-            background: #1E3A5F;
-            color: #60A5FA;
-        }
-        .lead-item .lead-platform.linkedin {
-            background: #1E3A5F;
-            color: #60A5FA;
-        }
-        .lead-item .lead-status {
-            font-size: 0.65rem;
-            padding: 2px 10px;
-            border-radius: 20px;
-        }
-        .lead-item .lead-status.ready {
-            background: #064E3B;
-            color: #34D399;
-        }
-        .lead-item .lead-status.pending {
-            background: #78350F;
-            color: #FBBF24;
-        }
-        .lead-item .lead-status.processing {
-            background: #1E3A5F;
-            color: #60A5FA;
-        }
-        .lead-item .lead-status.failed {
-            background: #3B1F2E;
-            color: #F472B6;
-        }
-        .lead-results-grid {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        .lead-results-grid::-webkit-scrollbar {
-            width: 4px;
-        }
-        .lead-results-grid::-webkit-scrollbar-thumb {
-            background: #4F46E5;
-            border-radius: 10px;
-        }
-        .btn-download-lead {
-            background: transparent;
-            border: 1px solid #2D3748;
-            border-radius: 4px;
-            color: #9CA3AF;
-            padding: 2px 10px;
-            font-size: 0.7rem;
-            transition: all 0.2s ease;
-        }
-        .btn-download-lead:hover {
-            border-color: #4F46E5;
-            color: white;
-        }
-        .loading-dashboard {
-            padding: 40px;
-            text-align: center;
-            color: #6B7280;
-        }
-        .loading-dashboard .spinner {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #2D3748;
-            border-top: 3px solid #6366F1;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 12px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة استخراج وتنظيف البيانات</title>
+    <!-- تضمين مكتبة Tailwind CSS للتصميم -->
+    <script src="https://tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen p-6">
 
-    <!-- ===== HEADER ===== -->
-    <header class="app-header">
-        <div class="d-flex align-items-center gap-3">
-            <button class="toggle-sidebar" id="sidebarToggle" aria-label="Toggle sidebar">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="brand">
-                <span>Outflo</span>
-            </div>
-        </div>
-        <div class="header-actions">
-            <span class="badge-status" id="userDisplay" style="background: #1E3A5F; color: #60A5FA;">
-                <i class="fas fa-user me-1"></i> Loading...
-            </span>
-            <button class="btn btn-outline-custom btn-sm" id="logoutBtn" style="padding: 4px 12px; font-size: 0.75rem;">
-                <i class="fas fa-sign-out-alt me-1"></i> Logout
-            </button>
-        </div>
-    </header>
+    <div class="max-w-6xl mx-auto">
+        <!-- العنوان الرئيسي -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-indigo-600 mb-2">منصة استخراج البيانات الذكية</h1>
+            <p class="text-gray-600">استخرج البيانات، نظفها من الشوائب، وصدرها لعملك فوراً</p>
+        </header>
 
-    <!-- ===== SIDEBAR ===== -->
-    <aside class="sidebar" id="mainSidebar">
-        <nav class="nav flex-column">
-            <div class="nav-section">Platform</div>
-            <a href="index.html" class="nav-link active">
-                <i class="fas fa-th-large"></i> Dashboard
-            </a>
-            <a href="gmaps.html" class="nav-link">
-                <i class="fas fa-map-pin"></i> Google Maps
-            </a>
-            <a href="linkedin.html" class="nav-link">
-                <i class="fab fa-linkedin"></i> LinkedIn
-            </a>
-        </nav>
-        <div class="mt-auto pt-3 border-top border-secondary border-opacity-25" style="margin-top: 40px;">
-            <div class="text-secondary small" style="padding: 0 16px;">
-                <i class="fas fa-shield-alt me-1"></i> Secured
-            </div>
-            <div class="text-secondary small" style="padding: 0 16px; margin-top: 4px;">
-                <i class="fas fa-circle text-success me-1" style="font-size: 0.4rem;"></i> v2.0
-            </div>
-        </div>
-    </aside>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- لوحة المدخلات (العمود الأول) -->
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 lg:col-span-1">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">إعدادات البحث</h2>
+                
+                <form id="scraperForm" class="space-y-4">
+                    <!-- حقل النيش -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">النيش (Industry):</label>
+                        <input type="text" id="industryInput" placeholder="مثال: عيادات أسنان، مطاعم" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
 
-    <!-- ===== MAIN CONTENT ===== -->
-    <main class="main-content" id="mainContent">
+                    <!-- حقل الموقع الجغرافي -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">الموقع الجغرافي (Location):</label>
+                        <input type="text" id="locationInput" placeholder="مثال: دبي، الرياض" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
 
-        <h1 class="h4 fw-bold text-light mb-4">Dashboard</h1>
+                    <!-- خيارات نوع البيانات -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">نوع البيانات المطلوبة:</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-2 space-x-reverse">
+                                <input type="checkbox" id="dataTypeEmail" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-sm text-gray-700">البريد الإلكتروني (Emails)</span>
+                            </label>
+                            <label class="flex items-center space-x-2 space-x-reverse">
+                                <input type="checkbox" id="dataTypePhone" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-sm text-gray-700">رقم الهاتف</span>
+                            </label>
+                            <label class="flex items-center space-x-2 space-x-reverse">
+                                <input type="checkbox" id="dataTypeWebsite" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-sm text-gray-700">رابط الموقع الإلكتروني</span>
+                            </label>
+                        </div>
+                    </div>
 
-        <!-- Stats Cards -->
-        <div class="row g-3 mb-4" id="statsRow">
-            <div class="col-6 col-md-3">
-                <div class="stat-box">
-                    <div class="stat-number" id="statTotal">0</div>
-                    <div class="stat-label">Total Leads</div>
-                </div>
+                    <!-- خيارات التصفية المتقدمة -->
+                    <div class="pt-2 border-t">
+                        <label class="block text-sm font-medium text-gray-600 mb-2">تنظيف وتصفية البيانات الرقمية:</label>
+                        <label class="flex items-center space-x-2 space-x-reverse">
+                            <input type="checkbox" id="filterGenericEmails" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                            <span class="text-sm text-red-600 font-medium">استبعاد إيميلات الدعم (info@, support@)</span>
+                        </label>
+                    </div>
+Tailwindcss
+Tailwind CSS - Rapidly build modern websites without ever leaving your HTML.
+Tailwind CSS is a utility-first CSS framework for rapidly building modern websites without ever leaving your HTML.
+<!-- زر التشغيل -->
+                    <button type="button" id="startScrapingBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition duration-200 shadow-md">
+                        بدء عملية الاستخراج
+                    </button>
+                </form>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-box" style="border-left-color: #60A5FA;">
-                    <div class="stat-number" id="statGoogle">0</div>
-                    <div class="stat-label"><i class="fas fa-map-pin me-1" style="color:#60A5FA;"></i> Google Maps</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-box" style="border-left-color: #0A66C2;">
-                    <div class="stat-number" id="statLinkedin">0</div>
-                    <div class="stat-label"><i class="fab fa-linkedin me-1" style="color:#0A66C2;"></i> LinkedIn</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-box" style="border-left-color: #34D399;">
-                    <div class="stat-number" id="statReady">0</div>
-                    <div class="stat-label"><i class="fas fa-check-circle me-1" style="color:#34D399;"></i> Ready</div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Filters -->
-        <div class="glass-card mb-4">
-            <div class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold text-light small text-uppercase">Platform</label>
-                    <select class="form-control form-control-custom" id="filterPlatform">
-                        <option value="all">All platforms</option>
-                        <option value="google">Google Maps</option>
-                        <option value="linkedin">LinkedIn</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold text-light small text-uppercase">Status</label>
-                    <select class="form-control form-control-custom" id="filterStatus">
-                        <option value="all">All status</option>
-                        <option value="ready">Ready</option>
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="failed">Failed</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold text-light small text-uppercase">Search</label>
-                    <input type="text" class="form-control form-control-custom" id="filterSearch" placeholder="Search..." />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold text-light small text-uppercase">Actions</label>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary-custom w-50" id="filterSearchBtn">
-                            <i class="fas fa-search me-1"></i> Search
-                        </button>
-                        <button class="btn btn-outline-custom w-50" id="filterClearBtn">
-                            <i class="fas fa-undo me-1"></i> Clear
-                        </button>
+            <!-- لوحة التحكم والنتائج (العمود الثاني والثالث) -->
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 lg:col-span-2 flex flex-col">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">لوحة التحكم والمراقبة (Dashboard)</h2>
+                
+                <!-- عدادات الحالة السريعة -->
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="bg-indigo-50 p-4 rounded-lg text-center">
+                        <span class="block text-sm text-indigo-600 font-medium">البيانات المستخرجة</span>
+                        <span id="scrapedCount" class="text-2xl font-bold text-indigo-900">0</span>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg text-center">
+                        <span class="block text-sm text-gray-600 font-medium">حالة الطلب</span>
+                        <span id="requestStatus" class="inline-block mt-1 px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-800">جاهز للبدء</span>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg text-center">
+                        <span class="block text-sm text-green-600 font-medium">بعد التنظيف والفحص</span>
+                        <span id="cleanCount" class="text-2xl font-bold text-green-900">0</span>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Results List -->
-        <div class="glass-card p-0 overflow-hidden">
-            <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold text-light mb-0"><i class="fas fa-list me-2 text-primary"></i>My Extractions</h5>
-                <span class="text-secondary small" id="leadCount">0 records</span>
-            </div>
-            <div class="lead-results-grid" id="leadsContainer">
-                <div class="loading-dashboard">
-                    <div class="spinner"></div>
-                    <p>Loading your data...</p>
+                <!-- أزرار الإجراءات للجدول -->
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-md font-medium text-gray-700">معاينة البيانات المنظفة:</h3>
+                    <button id="exportCsvBtn" disabled class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-1.5 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                        تصدير كـ CSV / Excel
+                    </button>
                 </div>
+
+                <!-- جدول عرض البيانات -->
+                <div class="overflow-x-auto border rounded-lg flex-grow max-h-[350px]">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm text-right">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3 font-medium text-gray-600">الاسم</th>
+                                <th class="px-4 py-3 font-medium text-gray-600">البريد الإلكتروني</th>
+                                <th class="px-4 py-3 font-medium text-gray-600">الهاتف</th>
+                                <th class="px-4 py-3 font-medium text-gray-600">الموقع الإلكتروني</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTableBody" class="divide-y divide-gray-200 bg-white">
+                            <tr>
+                                <td colspan="4" class="px-4 py-8 text-center text-gray-400 italic">لا توجد بيانات حالياً. قم بإدخال الخيارات واضغط بدء الاستخراج.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
+
         </div>
+    </div>
 
-        <div class="mt-3 text-secondary small text-center opacity-50">
-            <i class="fas fa-lock me-1"></i> Secured · Outflo v2.0 · B2B Intelligence
-        </div>
-
-    </main>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Auth Check -->
-    <script src="auth-check.js"></script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // =============================================
-            // Sidebar toggle
-            // =============================================
-            const toggle = document.getElementById('sidebarToggle');
-            const sidebar = document.getElementById('mainSidebar');
-            const main = document.getElementById('mainContent');
-            if (toggle && sidebar && main) {
-                toggle.addEventListener('click', function() {
-                    if (window.innerWidth <= 992) {
-                        sidebar.classList.toggle('open');
-                    } else {
-                        sidebar.classList.toggle('collapsed');
-                        main.classList.toggle('expanded');
-                    }
-                });
-                window.addEventListener('resize', function() {
-                    if (window.innerWidth <= 992) {
-                        sidebar.classList.remove('collapsed');
-                        main.classList.remove('expanded');
-                    } else {
-                        sidebar.classList.remove('open');
-                    }
-                });
-            }
-
-            // =============================================
-            // Dashboard Data Loading
-            // =============================================
-            let currentUser = null;
-            let allLeads = [];
-
-            async function loadDashboard() {
-                console.log('📊 Loading dashboard...');
-                
-                try {
-                    const userData = await Auth.initAuth();
-                    if (!userData) {
-                        console.log('❌ No user authenticated');
-                        return;
-                    }
-                    
-                    currentUser = userData.user;
-                    console.log('✅ Authenticated:', currentUser.email);
-                    console.log('👤 User ID:', currentUser.id);
-                    
-                    // Load data from database
-                    const { stats, leads } = await Auth.loadDashboardData(currentUser.id);
-                    allLeads = leads;
-                    
-                    console.log('📊 Stats:', stats);
-                    console.log('📊 Leads count:', leads.length);
-                    
-                    // Update stats
-                    document.getElementById('statTotal').textContent = stats.total || 0;
-                    document.getElementById('statGoogle').textContent = stats.google || 0;
-                    document.getElementById('statLinkedin').textContent = stats.linkedin || 0;
-                    document.getElementById('statReady').textContent = stats.ready || 0;
-                    
-                    // Render leads
-                    renderLeads(leads);
-                    
-                } catch (err) {
-                    console.error('❌ Error loading dashboard:', err);
-                    document.getElementById('leadsContainer').innerHTML = `
-                        <div class="dashboard-empty">
-                            <i class="fas fa-exclamation-triangle" style="color:#F472B6;"></i>
-                            <h5>Error Loading Data</h5>
-                            <p>${err.message || 'Please try refreshing the page.'}</p>
-                        </div>
-                    `;
-                }
-            }
-
-            function renderLeads(leads) {
-                const container = document.getElementById('leadsContainer');
-                const count = document.getElementById('leadCount');
-                
-                if (!leads || leads.length === 0) {
-                    container.innerHTML = `
-                        <div class="dashboard-empty">
-                            <i class="fas fa-inbox"></i>
-                            <h5>No Data Collected Yet</h5>
-                            <p>Run a scraper from <strong>Google Maps</strong> or <strong>LinkedIn</strong> to start gathering leads.</p>
-                            <div class="d-flex gap-3">
-                                <a href="gmaps.html" class="btn btn-primary-custom">
-                                    <i class="fas fa-map-pin me-2"></i> Go to Google Maps
-                                </a>
-                                <a href="linkedin.html" class="btn btn-primary-custom" style="background: #0A66C2;">
-                                    <i class="fab fa-linkedin me-2"></i> Go to LinkedIn
-                                </a>
-                            </div>
-                        </div>
-                    `;
-                    count.textContent = '0 records';
-                    return;
-                }
-
-                let html = '';
-                leads.forEach(lead => {
-                    const platformClass = lead.platform === 'google' ? '' : 'linkedin';
-                    const statusClass = lead.status || 'pending';
-                    const dataCount = lead.results_count || (lead.data ? lead.data.length : 0);
-                    const date = new Date(lead.created_at);
-                    const dateStr = date.toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    html += `
-                        <div class="lead-item">
-                            <div class="d-flex align-items-center gap-3 flex-wrap">
-                                <span class="lead-platform ${platformClass}">${lead.platform === 'google' ? '🗺️ Google' : '🔗 LinkedIn'}</span>
-                                <span class="text-light small fw-semibold">${lead.search_query || 'N/A'}</span>
-                                ${lead.location ? `<span class="text-secondary small">📍 ${lead.location}</span>` : ''}
-                                <span class="text-secondary small">${dateStr}</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-3 flex-wrap">
-                                <span class="text-light small fw-semibold">${dataCount} leads</span>
-                                <span class="lead-status ${statusClass}">${statusClass.toUpperCase()}</span>
-                                ${dataCount > 0 ? `
-                                    <button class="btn-download-lead" onclick="downloadLeadData('${lead.id}')">
-                                        <i class="fas fa-file-csv"></i> CSV
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                container.innerHTML = html;
-                count.textContent = leads.length + ' records';
-            }
-
-            // =============================================
-            // Download lead data as CSV
-            // =============================================
-            window.downloadLeadData = async function(leadId) {
-                const lead = allLeads.find(l => l.id === leadId);
-                if (!lead || !lead.data || lead.data.length === 0) {
-                    alert('No data to download');
-                    return;
-                }
-
-                let headers, rows;
-                if (lead.platform === 'google') {
-                    headers = ['Name', 'Phone', 'Website', 'Address'];
-                    rows = lead.data.map(item => [
-                        item.name || item.title || '',
-                        item.phone || '',
-                        item.website || '',
-                        item.address || ''
-                    ]);
-                } else {
-                    headers = ['Full Name', 'Job Title', 'Email', 'Profile URL'];
-                    rows = lead.data.map(item => [
-                        item.fullName || item.name || '',
-                        item.headline || item.occupation || '',
-                        item.email || '',
-                        item.profileUrl || item.url || ''
-                    ]);
-                }
-
-                let csv = '\uFEFF' + headers.join(',') + '\n';
-                rows.forEach(row => {
-                    const escaped = row.map(cell => {
-                        if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"') || cell.includes('\n'))) {
-                            return `"${cell.replace(/"/g, '""')}"`;
-                        }
-                        return cell;
-                    });
-                    csv += escaped.join(',') + '\n';
-                });
-
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `leads_${lead.platform}_${new Date().toISOString().slice(0,10)}.csv`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(link.href);
-            };
-
-            // =============================================
-            // Filters
-            // =============================================
-            document.getElementById('filterSearchBtn').addEventListener('click', function() {
-                const platform = document.getElementById('filterPlatform').value;
-                const status = document.getElementById('filterStatus').value;
-                const search = document.getElementById('filterSearch').value.toLowerCase();
-
-                let filtered = allLeads;
-
-                if (platform !== 'all') {
-                    filtered = filtered.filter(l => l.platform === platform);
-                }
-                if (status !== 'all') {
-                    filtered = filtered.filter(l => (l.status || 'pending') === status);
-                }
-                if (search) {
-                    filtered = filtered.filter(l => 
-                        (l.search_query || '').toLowerCase().includes(search) ||
-                        (l.location || '').toLowerCase().includes(search)
-                    );
-                }
-
-                renderLeads(filtered);
-            });
-
-            document.getElementById('filterClearBtn').addEventListener('click', function() {
-                document.getElementById('filterPlatform').value = 'all';
-                document.getElementById('filterStatus').value = 'all';
-                document.getElementById('filterSearch').value = '';
-                renderLeads(allLeads);
-            });
-
-            // =============================================
-            // Load dashboard
-            // =============================================
-            loadDashboard();
-
-            // Refresh data every 30 seconds
-            setInterval(() => {
-                if (currentUser) {
-                    console.log('🔄 Refreshing dashboard data...');
-                    Auth.loadDashboardData(currentUser.id).then(({ stats, leads }) => {
-                        allLeads = leads;
-                        document.getElementById('statTotal').textContent = stats.total || 0;
-                        document.getElementById('statGoogle').textContent = stats.google || 0;
-                        document.getElementById('statLinkedin').textContent = stats.linkedin || 0;
-                        document.getElementById('statReady').textContent = stats.ready || 0;
-                        renderLeads(leads);
-                    });
-                }
-            }, 30000);
-        });
-    </script>
-
+    <!-- استدعاء ملف الـ JavaScript الخارجي -->
+    <script src="script.js"></script>
 </body>
 </html>
