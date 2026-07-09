@@ -1,6 +1,6 @@
 // --- 1. إعدادات المنصة ومفاتيح الربط ---
 const API_TOKEN = 'apify_api_J3P2YlygNudvv6ZSWNJ8cbLrPrFhxe3p4zIz';
-const ACTOR_ID = 'vortex_data/google-maps';
+const ACTOR_ID = 'compass/crawler-google-places';
 
 // --- 2. جلب عناصر الواجهة ---
 const startBtn = document.getElementById('startScrapingBtn');
