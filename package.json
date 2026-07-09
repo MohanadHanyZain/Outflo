@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/MohanadHanyZain/Outflo#readme",
   "dependencies": {
+    "apify-client": "^2.23.4",
     "axios": "^1.18.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

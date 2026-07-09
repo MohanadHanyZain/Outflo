@@ -43,23 +43,23 @@ startBtn.addEventListener('click', async () => {
     }
 });
 
-async function monitorExecution(runId, datasetId) {
+async function monitorExecution(runId) {
     const interval = setInterval(async () => {
         try {
-            const response = await fetch(`${SERVER_URL}/api/status/${runId}/${datasetId}`);
+            const response = await fetch(`${SERVER_URL}/api/status/${runId}`);
             const result = await response.json();
             
             if (result.status === 'SUCCEEDED') {
                 clearInterval(interval);
-                updateStatus('جاري تصفية وتنظيف البيانات...', 'bg-blue-100', 'text-blue-800');
                 processCleanedData(result.data);
             } else if (['FAILED', 'ABORTED', 'TIMED-OUT'].includes(result.status)) {
                 clearInterval(interval);
-                throw new Error(`فشلت المهمة داخل السحاب بحالة: ${result.status}`);
+                alert('فشلت العملية على السيرفر.');
+                startBtn.disabled = false;
             }
         } catch (error) {
             clearInterval(interval);
-            updateStatus('خطأ أثناء المراقبة', 'bg-red-100', 'text-red-800');
+            console.error(error);
             startBtn.disabled = false;
         }
     }, 5000);
@@ -67,36 +67,28 @@ async function monitorExecution(runId, datasetId) {
 
 function processCleanedData(rawData) {
     scrapedCountEl.textContent = rawData.length;
-    const seenEmails = new Set();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const filterGeneric = document.getElementById('filterGenericEmails').checked;
-
+    
+    // تعديل: السماح بعرض النتائج حتى لو لم يتوفر إيميل، أو كان إيميل عام
     finalCleanedData = rawData.map(item => {
         let email = '';
-        if (item.emails && item.emails.length > 0) email = item.emails[0];
+        // محاولة البحث عن الإيميل في الحقول المختلفة
+        if (item.emails && item.emails.length > 0) email = item.emails[0].email;
         else if (item.email) email = item.email;
 
         return {
             name: item.title || item.name || 'غير متوفر',
-            email: email ? email.trim().toLowerCase() : '',
-            phone: item.phone || item.internationalPhone || 'غير متوفر',
+            email: email || 'لا يوجد إيميل',
+            phone: item.phone || 'غير متوفر',
             website: item.website || 'غير متوفر'
         };
-    }).filter(item => {
-        if (!item.email || !emailRegex.test(item.email)) return false;
-        if (seenEmails.has(item.email)) return false;
-        seenEmails.add(item.email);
-
-        if (filterGeneric) {
-            const genericWords = ['info@', 'support@', 'admin@', 'office@', 'contact@'];
-            if (genericWords.some(word => item.email.startsWith(word))) return false;
-        }
-        return true;
     });
 
+    // إزالة الفلترة القاسية (إزالة .filter(...) التي كانت تحذف النتائج)
+    // الآن سنعرض كل شيء تم استخراجه
     cleanCountEl.textContent = finalCleanedData.length;
     renderTable(finalCleanedData);
-    updateStatus('اكتمل بنجاح النظافة المطلقة!', 'bg-green-100', 'text-green-800');
+    
+    updateStatus('اكتملت العملية بنجاح!', 'bg-green-100', 'text-green-800');
     if (finalCleanedData.length > 0) exportBtn.disabled = false;
     startBtn.disabled = false;
 }
